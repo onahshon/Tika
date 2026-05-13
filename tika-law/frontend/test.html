@@ -92,7 +92,7 @@
       <div class="controls">
         <label>
           כתובת API
-          <input id="apiBaseUrl" value="http://localhost:8000" />
+          <input id="apiBaseUrl" />
         </label>
         <label>
           מזהה עורך דין
@@ -103,8 +103,15 @@
       <div id="tika-law-widget"></div>
     </main>
 
-    <script src="./widget.js"></script>
+    <script src="/widget/widget.js"></script>
     <script>
+      var defaultApiBaseUrl =
+        window.location.hostname === "localhost" && window.location.port === "5173"
+          ? "http://localhost:8000"
+          : window.location.origin;
+
+      document.querySelector("#apiBaseUrl").value = defaultApiBaseUrl;
+
       function mountWidget() {
         window.TikaLaw.init({
           mount: "#tika-law-widget",

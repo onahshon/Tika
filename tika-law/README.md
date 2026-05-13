@@ -69,6 +69,12 @@ py -m http.server 5173
 
 Open `http://localhost:5173/test.html`, set the API URL to `http://localhost:8000`, and click the health check button.
 
+When deployed on Render, open:
+
+```text
+https://YOUR_RENDER_SERVICE_URL/widget-test
+```
+
 ## Render Deployment
 
 This repo includes a root-level `render.yaml` Blueprint for the backend service.
