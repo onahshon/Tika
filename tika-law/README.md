@@ -71,7 +71,7 @@ Open `http://localhost:5173/test.html`, set the API URL to `http://localhost:800
 
 ## Render Deployment
 
-This repo includes a root-level `render.yaml` Blueprint for the backend service and PostgreSQL database.
+This repo includes a root-level `render.yaml` Blueprint for the backend service.
 
 In Render:
 
@@ -79,6 +79,8 @@ In Render:
 2. Connect the GitHub repo.
 3. Use the default Blueprint path: `render.yaml`.
 4. Fill the secret environment values when prompted, especially `OPENAI_API_KEY` and `BACKEND_CORS_ORIGINS`.
+
+PostgreSQL is intentionally not provisioned by the current Blueprint because Render allows only one active free-tier database per account. Add `DATABASE_URL` later using Supabase or a paid Render PostgreSQL instance before implementing persistence.
 
 The backend service uses:
 

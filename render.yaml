@@ -16,17 +16,7 @@ services:
         value: /api/v1
       - key: BACKEND_CORS_ORIGINS
         sync: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: tika-law-db
-          property: connectionString
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4.1-mini
-
-databases:
-  - name: tika-law-db
-    databaseName: tika_law
-    user: tika_law
-    plan: free
