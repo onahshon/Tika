@@ -37,3 +37,11 @@ Placeholder for product flows, lead scoring criteria, Hebrew prompt strategy, da
 - OpenAI may rewrite the backend-selected next message into concise human wording.
 - OpenAI may later summarize conversations for the attorney.
 - OpenAI must not choose the next required slot, override stopping conditions, or control lead capture.
+
+## Intent Gate
+
+- Every message is classified before intake advances.
+- Greetings receive a natural invitation to describe the work issue.
+- Intake questions begin only after minimal employment-law context exists.
+- Unclear or unrelated openers do not advance the flow.
+- Active-question answers are interpreted in the context of the current slot.

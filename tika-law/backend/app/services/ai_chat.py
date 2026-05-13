@@ -21,6 +21,10 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
         IntakeState(conversation_id=conversation_id, attorney_id=request.attorney_id),
     )
 
+    intent = classify_intent(request.message, state)
+    if intent in {"greeting", "irrelevant_nonsense", "contact_detail", "request_human", "stop_exit"}:
+        return _handle_pre_intake_intent(conversation_id, state, request.message, intent)
+
     last_question = _last_assistant_message(state)
     extracted_slots = (
         {}
@@ -58,6 +62,34 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
     )
 
 
+def classify_intent(message: str, state: IntakeState) -> str:
+    text = message.strip()
+    lowered = text.lower()
+
+    if lowered in {"היי", "שלום", "הלו", "בוקר טוב", "ערב טוב", "צהריים טובים", "hi", "hello"}:
+        return "greeting"
+
+    if any(term in lowered for term in ("בן אדם", "נציג", "עורך דין", "עו\"ד", "תחזרו אלי", "תתקשרו")):
+        return "request_human"
+
+    if lowered in {"ביי", "תודה ביי", "לא משנה", "עזוב", "עזבי", "סגור"}:
+        return "stop_exit"
+
+    if _extract_contact_local(text):
+        return "contact_detail"
+
+    if state.last_asked_slot:
+        return "answer_to_current_intake_question"
+
+    if _has_legal_context(lowered):
+        return "legal_situation_description"
+
+    if is_gibberish(text) or _looks_vague_without_context(lowered):
+        return "irrelevant_nonsense"
+
+    return "irrelevant_nonsense"
+
+
 def is_gibberish(message: str) -> bool:
     text = message.strip()
     lowered = text.lower()
@@ -80,6 +112,85 @@ def is_gibberish(message: str) -> bool:
         return True
 
     return False
+
+
+def _handle_pre_intake_intent(
+    conversation_id: str,
+    state: IntakeState,
+    message: str,
+    intent: str,
+) -> ChatMessageResponse:
+    state.turn_count += 1
+    state.history.append({"role": "user", "content": message})
+
+    if intent == "greeting":
+        assistant_message = "שלום. ספר/י בקצרה מה קרה בעבודה."
+        state.retry_count = 0
+    elif intent == "request_human":
+        assistant_message = "אפשר להשאיר טלפון, ונבדוק חזרה מהמשרד."
+        state.last_asked_slot = "contact"
+    elif intent == "contact_detail":
+        assistant_message = "קיבלתי. כדי להבין אם מתאים להעביר למשרד, מה קרה בעבודה?"
+    elif intent == "stop_exit":
+        assistant_message = "אין בעיה. אם תרצה/י להמשיך, אני כאן."
+        state.finalized = True
+    else:
+        state.retry_count += 1
+        if state.retry_count >= 2:
+            assistant_message = "נראה שאין מספיק מידע לבדיקה ראשונית."
+            state.finalized = True
+        else:
+            assistant_message = "לא בטוח שהבנתי. מה קרה בעבודה?"
+
+    state.history.append({"role": "assistant", "content": assistant_message})
+    return ChatMessageResponse(
+        conversation_id=conversation_id,
+        assistant_message=assistant_message,
+        classification="low_information",
+        score=0,
+        lead_captured=False,
+        notification_sent=False,
+        suggested_next_questions=[],
+    )
+
+
+def _has_legal_context(lowered: str) -> bool:
+    employment_terms = (
+        "שימוע",
+        "פיטור",
+        "פיטרו",
+        "פוטרתי",
+        "שכר",
+        "משכורת",
+        "מעסיק",
+        "עבודה",
+        "תלוש",
+        "חופשה",
+        "הריון",
+        "מילואים",
+        "אפליה",
+        "הטרדה",
+        "התפטרתי",
+        "הוריד לי",
+        "לא שילמו",
+    )
+    return any(term in lowered for term in employment_terms)
+
+
+def _looks_vague_without_context(lowered: str) -> bool:
+    if lowered in {"כן", "לא", "טוב", "אוקיי", "בסדר", "עובד", "חודשיים"}:
+        return True
+    return len(lowered.split()) <= 2
+
+
+def _extract_contact_local(text: str) -> str | None:
+    phone = re.search(r"05\d[-\s]?\d{7}", text)
+    if phone:
+        return phone.group(0)
+    email = re.search(r"[\w.\-+]+@[\w.\-]+\.\w+", text)
+    if email:
+        return email.group(0)
+    return None
 
 
 def _last_assistant_message(state: IntakeState) -> str | None:
