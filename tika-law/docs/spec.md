@@ -30,3 +30,10 @@ Placeholder for product flows, lead scoring criteria, Hebrew prompt strategy, da
 - Each question slot has a retry limit to prevent loops.
 - Contact details are requested only after enough high-signal context exists.
 - Most conversations should complete or triage out within 4-7 exchanges.
+
+## Hybrid AI Role
+
+- OpenAI may extract structured slot candidates from natural Hebrew phrasing.
+- OpenAI may rewrite the backend-selected next message into concise human wording.
+- OpenAI may later summarize conversations for the attorney.
+- OpenAI must not choose the next required slot, override stopping conditions, or control lead capture.

@@ -7,6 +7,7 @@ from backend.app.services.intake_engine import (
     build_summary,
 )
 from backend.app.services.notifications import notify_attorney
+from backend.app.services.openai_intake import extract_with_openai, phrase_with_openai
 
 CONVERSATIONS: dict[str, IntakeState] = {}
 NOTIFIED_CONVERSATIONS: set[str] = set()
@@ -19,7 +20,13 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
         IntakeState(conversation_id=conversation_id, attorney_id=request.attorney_id),
     )
 
-    decision = advance_intake(state, request.message)
+    extracted_slots = extract_with_openai(request.message)
+    decision = advance_intake(
+        state,
+        request.message,
+        external_slots=extracted_slots,
+        phrase_fn=phrase_with_openai,
+    )
 
     notification_sent = False
     if decision.lead_captured and conversation_id not in NOTIFIED_CONVERSATIONS:

@@ -140,6 +140,7 @@ Included now:
 - Floating Hebrew-first chat widget
 - Backend-controlled conversational intake engine
 - Structured slot tracking and loop prevention
+- OpenAI-assisted semantic extraction and concise wording
 - Lead quality scoring from intake state
 - Lead classification
 - Optional attorney email notification through SMTP settings
@@ -149,7 +150,6 @@ Included later:
 - Persistent structured lead intake
 - PostgreSQL-backed conversation persistence
 - Attorney-specific configuration stored in the database
-- OpenAI-assisted semantic extraction and wording under backend flow control
 
 Out of scope for now:
 

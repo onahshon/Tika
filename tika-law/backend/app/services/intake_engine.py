@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass, field
+from collections.abc import Callable
 
 CONTACT_SLOT = "contact"
 
@@ -62,10 +63,31 @@ class IntakeDecision:
     suggested_next_questions: list[str]
 
 
-def advance_intake(state: IntakeState, message: str) -> IntakeDecision:
+@dataclass
+class PhraseContext:
+    next_slot: str | None
+    canonical_message: str
+    classification: str
+    score: int
+    slots: dict[str, str]
+    latest_user_message: str
+    turn_count: int
+
+
+PhraseFn = Callable[[PhraseContext], str | None]
+
+
+def advance_intake(
+    state: IntakeState,
+    message: str,
+    external_slots: dict[str, str] | None = None,
+    phrase_fn: PhraseFn | None = None,
+) -> IntakeDecision:
     state.turn_count += 1
     state.history.append({"role": "user", "content": message})
     _merge_slots(state.slots, extract_slots(message))
+    if external_slots:
+        _merge_slots(state.slots, external_slots)
 
     score = score_state(state)
     classification = classify_state(state, score)
@@ -73,6 +95,7 @@ def advance_intake(state: IntakeState, message: str) -> IntakeDecision:
     if CONTACT_SLOT in state.slots and _ready_for_review(state):
         state.finalized = True
         reply = "אוקיי. אעביר לעורך הדין סיכום קצר לבדיקה."
+        reply = _phrase_or_default(phrase_fn, None, reply, classification, score, state, message)
         state.history.append({"role": "assistant", "content": reply})
         return IntakeDecision(reply, classification, score, True, [])
 
@@ -83,11 +106,13 @@ def advance_intake(state: IntakeState, message: str) -> IntakeDecision:
     ):
         state.finalized = True
         reply = "אין בעיה. בלי טלפון לא אעביר למשרד כרגע."
+        reply = _phrase_or_default(phrase_fn, None, reply, classification, score, state, message)
         state.history.append({"role": "assistant", "content": reply})
         return IntakeDecision(reply, classification, score, False, [])
 
     if classification == "not_relevant" and state.turn_count >= 2:
         reply = "זה לא נשמע כמו דיני עבודה. יש קשר למעסיק?"
+        reply = _phrase_or_default(phrase_fn, None, reply, classification, score, state, message)
         state.history.append({"role": "assistant", "content": reply})
         return IntakeDecision(reply, classification, score, False, ["יש קשר למעסיק?"])
 
@@ -98,12 +123,22 @@ def advance_intake(state: IntakeState, message: str) -> IntakeDecision:
             reply = "אין בעיה. בלי טלפון לא אעביר למשרד כרגע."
         else:
             reply = "כרגע חסר מידע לבדיקה. אם יש מסמך מהמעסיק, שמור אותו."
+        reply = _phrase_or_default(phrase_fn, None, reply, classification, score, state, message)
         state.history.append({"role": "assistant", "content": reply})
         return IntakeDecision(reply, classification, score, False, [])
 
     question = QUESTION_COPY[next_slot]
     _mark_asked(state, next_slot, question)
     assistant_message = _prefix_for_state(state, next_slot) + question
+    assistant_message = _phrase_or_default(
+        phrase_fn,
+        next_slot,
+        assistant_message,
+        classification,
+        score,
+        state,
+        message,
+    )
     state.history.append({"role": "assistant", "content": assistant_message})
     return IntakeDecision(assistant_message, classification, score, False, [question])
 
@@ -267,6 +302,32 @@ def _merge_slots(existing: dict[str, str], incoming: dict[str, str]) -> None:
     for key, value in incoming.items():
         if value and key not in existing:
             existing[key] = value
+
+
+def _phrase_or_default(
+    phrase_fn: PhraseFn | None,
+    next_slot: str | None,
+    canonical_message: str,
+    classification: str,
+    score: int,
+    state: IntakeState,
+    latest_user_message: str,
+) -> str:
+    if not phrase_fn:
+        return canonical_message
+
+    phrased = phrase_fn(
+        PhraseContext(
+            next_slot=next_slot,
+            canonical_message=canonical_message,
+            classification=classification,
+            score=score,
+            slots=dict(state.slots),
+            latest_user_message=latest_user_message,
+            turn_count=state.turn_count,
+        )
+    )
+    return phrased or canonical_message
 
 
 def _prefix_for_state(state: IntakeState, next_slot: str) -> str:
