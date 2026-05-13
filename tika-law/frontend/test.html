@@ -3,34 +3,49 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tika Law Widget Test</title>
+    <title>Tika Law Chat Widget Test</title>
     <style>
       :root {
         color-scheme: light;
-        font-family:
-          Arial,
-          "Noto Sans Hebrew",
-          sans-serif;
-        background: #f7f8fa;
+        font-family: Arial, "Noto Sans Hebrew", sans-serif;
+        background: #eef2ec;
         color: #17202a;
       }
 
       body {
         margin: 0;
         min-height: 100vh;
-        display: grid;
-        place-items: center;
+        background:
+          linear-gradient(135deg, rgb(255 255 255 / 84%), rgb(238 242 236 / 88%)),
+          url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=70");
+        background-size: cover;
+        background-position: center;
       }
 
       main {
-        width: min(92vw, 520px);
-        padding: 32px 0;
+        width: min(92vw, 720px);
+        padding: 56px 28px;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(32px, 6vw, 56px);
+      }
+
+      p {
+        margin: 0 0 22px;
+        max-width: 560px;
+        line-height: 1.6;
       }
 
       .controls {
+        width: min(100%, 520px);
         display: grid;
         gap: 10px;
-        margin-bottom: 16px;
+        padding: 16px;
+        border-radius: 8px;
+        background: rgb(255 255 255 / 88%);
+        border: 1px solid #d9e0e8;
       }
 
       label {
@@ -40,109 +55,21 @@
         font-weight: 700;
       }
 
-      input,
-      textarea {
+      input {
         border: 1px solid #cfd6df;
         border-radius: 6px;
         padding: 10px 12px;
         font: inherit;
       }
-
-      textarea {
-        resize: vertical;
-      }
-
-      .tika-law-widget {
-        border: 1px solid #d9e0e8;
-        border-radius: 8px;
-        background: #ffffff;
-        padding: 20px;
-        box-shadow: 0 12px 32px rgb(23 32 42 / 8%);
-      }
-
-      .tika-law-widget__form {
-        display: grid;
-        gap: 12px;
-      }
-
-      .tika-law-widget__field {
-        display: grid;
-        gap: 6px;
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      .tika-law-widget__title {
-        margin: 0 0 8px;
-        font-size: 22px;
-      }
-
-      .tika-law-widget__description,
-      .tika-law-widget__status {
-        margin: 0 0 16px;
-        line-height: 1.5;
-      }
-
-      .tika-law-widget__button {
-        min-height: 42px;
-        border: 0;
-        border-radius: 6px;
-        padding: 0 16px;
-        background: #1f6feb;
-        color: #ffffff;
-        font: inherit;
-        font-weight: 700;
-        cursor: pointer;
-      }
-
-      .tika-law-widget__button:hover {
-        background: #185abc;
-      }
-
-      .tika-law-widget__button:disabled {
-        cursor: wait;
-        opacity: 0.7;
-      }
-
-      .tika-law-widget__status,
-      .tika-law-widget__message,
-      .tika-law-widget__disclaimer {
-        margin-top: 16px;
-        color: #44546a;
-      }
-
-      .tika-law-widget__result-title {
-        margin: 20px 0 8px;
-        font-size: 18px;
-      }
-
-      .tika-law-widget__badge {
-        display: inline-block;
-        margin: 0 0 8px;
-        border-radius: 6px;
-        background: #e8f0fe;
-        color: #174ea6;
-        padding: 6px 10px;
-        font-weight: 700;
-      }
-
-      .tika-law-widget__questions-title {
-        margin: 12px 0 6px;
-        font-weight: 700;
-      }
-
-      .tika-law-widget__questions {
-        margin: 0;
-        padding-inline-start: 24px;
-      }
-
-      .tika-law-widget__disclaimer {
-        font-size: 13px;
-      }
     </style>
   </head>
   <body>
     <main>
+      <h1>Tika Law</h1>
+      <p>
+        דף בדיקה לווידג׳ט הצף. לחצו על הכפתור הכחול בתחתית המסך כדי להתחיל שיחה עם המזכירה הדיגיטלית.
+      </p>
+
       <div class="controls">
         <label>
           כתובת API
@@ -157,12 +84,15 @@
       <div id="tika-law-widget"></div>
     </main>
 
-    <script src="/widget/widget.js"></script>
     <script>
       var defaultApiBaseUrl =
         window.location.hostname === "localhost" && window.location.port === "5173"
           ? "http://localhost:8000"
           : window.location.origin;
+      var widgetScript =
+        window.location.hostname === "localhost" && window.location.port === "5173"
+          ? "./widget.js"
+          : "/widget/widget.js";
 
       document.querySelector("#apiBaseUrl").value = defaultApiBaseUrl;
 
@@ -174,9 +104,13 @@
         });
       }
 
+      var script = document.createElement("script");
+      script.src = widgetScript;
+      script.onload = mountWidget;
+      document.body.appendChild(script);
+
       document.querySelector("#apiBaseUrl").addEventListener("change", mountWidget);
       document.querySelector("#attorneyId").addEventListener("change", mountWidget);
-      mountWidget();
     </script>
   </body>
 </html>

@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"
 
+    attorney_notification_to: str | None = None
     attorney_notification_from: str | None = None
     smtp_host: str | None = None
     smtp_port: int = 587

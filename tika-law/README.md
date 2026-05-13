@@ -75,6 +75,18 @@ When deployed on Render, open:
 https://YOUR_RENDER_SERVICE_URL/widget-test
 ```
 
+For an external website, embed:
+
+```html
+<script src="https://YOUR_RENDER_SERVICE_URL/widget/widget.js"></script>
+<script>
+  window.TikaLaw.init({
+    apiBaseUrl: "https://YOUR_RENDER_SERVICE_URL",
+    attorneyId: "demo-attorney"
+  });
+</script>
+```
+
 ## Render Deployment
 
 This repo includes a root-level `render.yaml` Blueprint for the backend service.
@@ -125,16 +137,18 @@ alembic upgrade head
 
 Included now:
 
-- Structured lead intake
-- Basic Hebrew-first follow-up questions
-- Lead quality scoring
+- Floating Hebrew-first chat widget
+- AI-assisted intake when `OPENAI_API_KEY` is configured
+- Rule-based fallback chat when OpenAI is unavailable
+- Lead quality scoring from the conversation
 - Lead classification
+- Optional attorney email notification through SMTP settings
 
 Included later:
 
-- Attorney notification
+- Persistent structured lead intake
 - PostgreSQL-backed conversation persistence
-- OpenAI-assisted follow-up strategy
+- Attorney-specific configuration stored in the database
 
 Out of scope for now:
 
