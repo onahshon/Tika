@@ -20,7 +20,10 @@ class Settings(BaseSettings):
         alias="BACKEND_CORS_ORIGINS",
     )
 
-    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/tika_law"
+    database_url_raw: str = Field(
+        default="postgresql+psycopg://postgres:postgres@localhost:5432/tika_law",
+        alias="DATABASE_URL",
+    )
 
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"
@@ -38,6 +41,13 @@ class Settings(BaseSettings):
             for origin in self.backend_cors_origins_raw.split(",")
             if origin.strip()
         ]
+
+    @property
+    def database_url(self) -> str:
+        if self.database_url_raw.startswith("postgresql://"):
+            return self.database_url_raw.replace("postgresql://", "postgresql+psycopg://", 1)
+
+        return self.database_url_raw
 
 
 @lru_cache

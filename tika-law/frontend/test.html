@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tika Law Widget Test</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family:
+          Arial,
+          "Noto Sans Hebrew",
+          sans-serif;
+        background: #f7f8fa;
+        color: #17202a;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+      }
+
+      main {
+        width: min(92vw, 520px);
+      }
+
+      .controls {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      input {
+        border: 1px solid #cfd6df;
+        border-radius: 6px;
+        padding: 10px 12px;
+        font: inherit;
+      }
+
+      .tika-law-widget {
+        border: 1px solid #d9e0e8;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 20px;
+        box-shadow: 0 12px 32px rgb(23 32 42 / 8%);
+      }
+
+      .tika-law-widget__title {
+        margin: 0 0 8px;
+        font-size: 22px;
+      }
+
+      .tika-law-widget__description,
+      .tika-law-widget__status {
+        margin: 0 0 16px;
+        line-height: 1.5;
+      }
+
+      .tika-law-widget__button {
+        min-height: 42px;
+        border: 0;
+        border-radius: 6px;
+        padding: 0 16px;
+        background: #1f6feb;
+        color: #ffffff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .tika-law-widget__button:hover {
+        background: #185abc;
+      }
+
+      .tika-law-widget__status {
+        margin-top: 16px;
+        color: #44546a;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="controls">
+        <label>
+          כתובת API
+          <input id="apiBaseUrl" value="http://localhost:8000" />
+        </label>
+        <label>
+          מזהה עורך דין
+          <input id="attorneyId" value="demo-attorney" />
+        </label>
+      </div>
+
+      <div id="tika-law-widget"></div>
+    </main>
+
+    <script src="./widget.js"></script>
+    <script>
+      function mountWidget() {
+        window.TikaLaw.init({
+          mount: "#tika-law-widget",
+          apiBaseUrl: document.querySelector("#apiBaseUrl").value,
+          attorneyId: document.querySelector("#attorneyId").value,
+        });
+      }
+
+      document.querySelector("#apiBaseUrl").addEventListener("change", mountWidget);
+      document.querySelector("#attorneyId").addEventListener("change", mountWidget);
+      mountWidget();
+    </script>
+  </body>
+</html>

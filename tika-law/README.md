@@ -60,6 +60,35 @@ Health check:
 GET http://localhost:8000/health
 ```
 
+Widget test page:
+
+```powershell
+cd frontend
+py -m http.server 5173
+```
+
+Open `http://localhost:5173/test.html`, set the API URL to `http://localhost:8000`, and click the health check button.
+
+## Render Deployment
+
+This repo includes a root-level `render.yaml` Blueprint for the backend service and PostgreSQL database.
+
+In Render:
+
+1. Create a new Blueprint.
+2. Connect the GitHub repo.
+3. Use the default Blueprint path: `render.yaml`.
+4. Fill the secret environment values when prompted, especially `OPENAI_API_KEY` and `BACKEND_CORS_ORIGINS`.
+
+The backend service uses:
+
+```text
+Root directory: tika-law
+Build command: pip install -r requirements.txt
+Start command: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+Health check: /health
+```
+
 ## Database
 
 The backend expects `DATABASE_URL` to be a PostgreSQL-compatible SQLAlchemy URL.

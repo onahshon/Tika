@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: tika-law-api
+    runtime: python
+    plan: free
+    rootDir: tika-law
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_NAME
+        value: Tika Law
+      - key: APP_ENV
+        value: production
+      - key: API_V1_PREFIX
+        value: /api/v1
+      - key: BACKEND_CORS_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tika-law-db
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: ATTORNEY_NOTIFICATION_FROM
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+databases:
+  - name: tika-law-db
+    databaseName: tika_law
+    user: tika_law
+    plan: free
