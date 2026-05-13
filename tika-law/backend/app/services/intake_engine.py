@@ -497,6 +497,8 @@ def _extract_duration(text: str) -> str | None:
 
 
 def _extract_status(lowered: str) -> str | None:
+    if lowered in {"עובד", "עובדת", "עדיין", "פעיל", "מועסק", "מועסקת"}:
+        return "still_employed"
     if any(term in lowered for term in ("עדיין עובד", "עדיין עובדת", "ממשיך לעבוד", "ממשיכה לעבוד")):
         return "still_employed"
     if any(term in lowered for term in ("פוטרתי", "פיטרו", "אחרי פיטורים", "סיימו לי")):
@@ -509,7 +511,7 @@ def _extract_status(lowered: str) -> str | None:
 
 
 def _extract_procedural_stage(lowered: str) -> str | None:
-    if "זימון לשימוע" in lowered or "קיבלתי זימון" in lowered:
+    if "זימון לשימוע" in lowered or "קיבלתי זימון" in lowered or "קחבלתי זימון" in lowered:
         return "hearing_scheduled"
     if "שימוע" in lowered and any(term in lowered for term in ("התקיים", "היה", "עברתי", "אחרי")):
         return "hearing_completed"

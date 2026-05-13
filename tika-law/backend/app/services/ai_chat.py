@@ -21,7 +21,16 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
         IntakeState(conversation_id=conversation_id, attorney_id=request.attorney_id),
     )
 
-    extracted_slots = {} if is_gibberish(request.message) else extract_with_openai(request.message)
+    last_question = _last_assistant_message(state)
+    extracted_slots = (
+        {}
+        if is_gibberish(request.message)
+        else extract_with_openai(
+            request.message,
+            last_asked_slot=state.last_asked_slot,
+            last_question=last_question,
+        )
+    )
     decision = advance_intake(
         state,
         request.message,
@@ -61,12 +70,20 @@ def is_gibberish(message: str) -> bool:
 
     has_hebrew = bool(re.search(r"[\u0590-\u05ff]", text))
     has_digit = bool(re.search(r"\d", text))
-    if not has_hebrew and not has_digit:
-        return True
 
     compact = re.sub(r"\s+", "", lowered)
     unique_chars = set(compact)
-    if len(compact) >= 3 and len(unique_chars) <= 2:
+    if len(compact) >= 3 and len(unique_chars) == 1:
+        return True
+
+    if not has_hebrew and not has_digit and len(unique_chars) <= 2:
         return True
 
     return False
+
+
+def _last_assistant_message(state: IntakeState) -> str | None:
+    for item in reversed(state.history):
+        if item.get("role") == "assistant":
+            return item.get("content")
+    return None

@@ -7,8 +7,17 @@ from backend.app.core.config import settings
 from backend.app.services.intake_engine import PhraseContext
 
 EXTRACTION_PROMPT = """
-Extract employment-law intake facts from the user's Hebrew message.
-Return only JSON. Do not invent facts.
+You are extracting facts from a Hebrew employment-law intake conversation.
+You will receive:
+- The user's latest message
+- The last question asked by the assistant
+- The slot the assistant was trying to fill
+
+CRITICAL: Interpret short answers in the CONTEXT of the question asked.
+- If asked about employment status and user says "עובד" -> still_employed
+- If asked about duration and user says "3 שנים" -> "3 שנים"
+- Tolerate Hebrew typos, such as "קחבלתי" for "קיבלתי"
+- Extract partial info. Do not require full sentences.
 
 Fields:
 - employer_name: string or null
@@ -18,7 +27,8 @@ Fields:
 - documentation_exists: one of yes, no, unclear, or null
 - urgency: one of immediate, near_term, dated, not_urgent, unclear, or null
 - signed_documents: one of signed, not_signed, requested, unclear, or null
-- callback_interest: boolean or null
+
+Return only JSON.
 """
 
 PHRASING_PROMPT = """
@@ -43,9 +53,19 @@ Return only JSON: {"assistant_message": "..."}
 """
 
 
-def extract_with_openai(message: str) -> dict[str, str]:
+def extract_with_openai(
+    message: str,
+    last_asked_slot: str | None = None,
+    last_question: str | None = None,
+) -> dict[str, str]:
     if not settings.openai_api_key:
         return {}
+
+    user_payload = {
+        "user_message": message,
+        "last_asked_slot": last_asked_slot,
+        "last_question": last_question,
+    }
 
     try:
         client = OpenAI(api_key=settings.openai_api_key)
@@ -53,7 +73,7 @@ def extract_with_openai(message: str) -> dict[str, str]:
             model=settings.openai_model,
             messages=[
                 {"role": "system", "content": EXTRACTION_PROMPT},
-                {"role": "user", "content": message},
+                {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
             ],
             response_format={"type": "json_object"},
             temperature=0,
