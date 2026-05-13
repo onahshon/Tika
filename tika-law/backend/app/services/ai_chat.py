@@ -9,17 +9,46 @@ from backend.app.schemas.chat import ChatMessageRequest, ChatMessageResponse
 from backend.app.services.notifications import notify_attorney
 
 SYSTEM_PROMPT = """
-You are Tika Law, a Hebrew-first AI legal intake secretary for an Israeli employment-law attorney.
-You are warm, concise, and professional. You feel like a capable legal secretary, not a generic chatbot.
+You are Tika Law, a Hebrew-first AI intake coordinator for an Israeli employment-law attorney.
+You should feel like an experienced, human legal intake professional at a law office.
 
-Your job:
-- collect lead qualification details through chat
-- ask one or two structured follow-up questions at a time
-- identify whether this is likely an employment-law lead
-- collect name, phone/email, employer, employment status, issue, dates, and desired outcome
-- never provide legal advice, legal conclusions, rights analysis, or promises
-- if the matter is clearly unrelated to employment law, explain politely that the office may not be the best fit
-- if the lead looks relevant and contact details exist, say the details can be passed to the attorney
+Core behavior:
+- Understand first, collect contact details later.
+- Do not behave like a form, a lead-capture bot, or a scripted decision tree.
+- Start by understanding what happened, the employment relationship, timing, documents, and current procedural stage.
+- Ask one natural follow-up question at a time, or two only when they are tightly related.
+- React to the user's emotional tone with calm professionalism.
+- Use varied human Hebrew phrasing. Avoid repetitive phrases like "תודה, הבנתי" and generic chatbot language.
+
+Early conversation priorities:
+- What happened?
+- How long did they work there?
+- Was there a hearing ("שימוע")?
+- Were they dismissed, still employed, resigned, or before a decision?
+- What type of employer/workplace is involved?
+- Do they have written documentation, messages, salary slips, a hearing invitation, dismissal letter, or agreement?
+- How urgent is it and what stage is it in right now?
+
+Contact collection:
+- Never ask for phone, email, name, or callback details at the beginning.
+- Ask for callback details only after enough context exists and the matter appears relevant or potentially high-quality.
+- A good callback prompt: "נראה שכדאי שעורך דין יעבור על הפרטים. אפשר מספר טלפון לחזרה?"
+
+Allowed light procedural guidance:
+- You may cautiously suggest keeping written records, saving salary slips, collecting messages, and avoiding signing documents immediately before review.
+- Use cautious language: "ייתכן שכדאי", "לעיתים כדאי", "נראה שכדאי שעורך דין יעבור על זה".
+
+Strict limits:
+- Never provide legal conclusions.
+- Never determine rights.
+- Never promise outcomes.
+- Never say "יש לך קייס" or equivalent.
+- Never create an attorney-client relationship.
+- Do not repeat disclaimers in every message. Use them sparingly and naturally.
+
+Qualification:
+- Classify naturally based on relevance, specificity, urgency, documentation, procedural stage, and contact availability only near the end.
+- If clearly not employment law, politely explain that the office may not be the right fit and ask if there is any workplace/employer connection.
 
 Return only compact JSON with:
 assistant_message: Hebrew response to the user
@@ -106,35 +135,40 @@ def _ask_openai(history: list[dict[str, str]]) -> dict[str, object]:
 
 def _fallback_reply(history: list[dict[str, str]]) -> dict[str, object]:
     transcript = "\n".join(item["content"] for item in history)
-    latest = history[-1]["content"]
+    user_turns = sum(1 for item in history if item["role"] == "user")
     score = _score_transcript(transcript)
     has_contact = _has_contact(transcript)
     is_employment = any(term.lower() in transcript.lower() for term in EMPLOYMENT_TERMS)
+    ready_for_contact = is_employment and score >= 65 and user_turns >= 3
 
     if not is_employment and len(history) >= 3:
         return {
-            "assistant_message": "תודה על הפרטים. לפי מה שתיארת, ייתכן שזה לא תחום דיני עבודה. אם יש קשר למעסיק, שכר, פיטורים או תנאי עבודה, אשמח שתכתוב לי מה הקשר.",
+            "assistant_message": "ממה שתיארת עד עכשיו, אני לא בטוחה שזה שייך לדיני עבודה. יש כאן קשר למעסיק, שכר, פיטורים, שימוע או תנאי עבודה?",
             "classification": "not_relevant",
             "score": 20,
             "lead_captured": False,
-            "suggested_next_questions": ["האם זה קשור למקום עבודה או למעסיק?"],
+            "suggested_next_questions": ["יש קשר למקום עבודה או למעסיק?"],
         }
 
-    if has_contact and score >= 70:
+    if has_contact and score >= 70 and user_turns >= 3:
         return {
-            "assistant_message": "תודה, קיבלתי תמונה ראשונית טובה. אעביר את הפרטים לעורך הדין לבדיקה. חשוב לציין שזה איסוף מידע ראשוני בלבד ולא ייעוץ משפטי.",
+            "assistant_message": "נראה שכדאי שעורך דין יעבור על הפרטים. אעביר את הסיכום לבדיקה במשרד, בלי לקבוע מסקנה משפטית בשלב הזה.",
             "classification": "high_quality",
             "score": score,
             "lead_captured": True,
             "suggested_next_questions": [],
         }
 
-    questions = _missing_questions(transcript)
+    if ready_for_contact and not has_contact:
+        questions = ["אפשר מספר טלפון לחזרה, כדי שעורך הדין יוכל לבדוק את הפרטים?"]
+    else:
+        questions = _context_questions(transcript, user_turns)
+
     return {
-        "assistant_message": _build_fallback_message(latest, questions),
+        "assistant_message": _build_fallback_message(transcript, questions, ready_for_contact),
         "classification": "needs_review" if score >= 45 else "low_information",
         "score": score,
-        "lead_captured": has_contact and score >= 55,
+        "lead_captured": has_contact and score >= 65 and user_turns >= 3,
         "suggested_next_questions": questions,
     }
 
@@ -161,24 +195,37 @@ def _has_contact(text: str) -> bool:
     return has_phone or has_email
 
 
-def _missing_questions(transcript: str) -> list[str]:
+def _context_questions(transcript: str, user_turns: int) -> list[str]:
     questions: list[str] = []
-    if not _has_contact(transcript):
-        questions.append("מה מספר הטלפון או האימייל שבו עורך הדין יוכל לחזור אליך?")
-    if "מעסיק" not in transcript and "חברה" not in transcript:
-        questions.append("מה שם המעסיק או מקום העבודה?")
+
+    if user_turns <= 1:
+        questions.append("כמה זמן עבדת שם, ומה הסטטוס כרגע - עדיין עובד, לפני שימוע, אחרי שימוע או אחרי פיטורים?")
+    if "שימוע" not in transcript and any(word in transcript for word in ("פיטור", "לפטר", "הודיעו", "סיום")):
+        questions.append("כבר התקיים שימוע או שקיבלת רק זימון?")
     if not re.search(r"\d", transcript):
         questions.append("מתי זה קרה בערך?")
-    if not any(word in transcript for word in ("פיצוי", "מכתב", "שיחה", "תביעה")):
-        questions.append("מה היית רוצה להשיג בשלב הזה?")
+    if not any(word in transcript for word in ("הודעה", "מייל", "מסמך", "תלוש", "הקלטה", "מכתב")):
+        questions.append("יש לך תיעוד כתוב, הודעות, תלושי שכר או מסמך מהמעסיק?")
+    if not any(word in transcript for word in ("חתמתי", "חתימה", "הסכם", "ויתור")):
+        questions.append("ביקשו ממך לחתום על משהו או שכבר חתמת?")
+    if not any(word in transcript for word in ("דחוף", "מחר", "היום", "שבוע", "זימון")):
+        questions.append("באיזה שלב זה נמצא כרגע, והאם יש דדליין קרוב?")
+
     return questions[:2]
 
 
-def _build_fallback_message(latest: str, questions: list[str]) -> str:
+def _build_fallback_message(transcript: str, questions: list[str], ready_for_contact: bool) -> str:
+    if ready_for_contact:
+        return questions[0]
+
     if not questions:
-        return "תודה, זה עוזר. אאסוף עוד פרט קטן כדי להעביר לעורך הדין תמונה מסודרת. האם יש מסמך או הודעה שקשורים לאירוע?"
-    joined = " ".join(questions)
-    return f"תודה, הבנתי. כדי לבדוק התאמה ראשונית לדיני עבודה, אשמח לעוד פרט: {joined}"
+        return "נשמע שיש כאן כמה פרטים שכדאי לסדר לפני בדיקה. ייתכן שכדאי לשמור בינתיים הודעות, מסמכים ותלושי שכר, ולא לחתום על מסמכים חדשים לפני שעוברים עליהם."
+
+    first_sentence = "אני רוצה להבין את השלב המדויק לפני שמחליטים אם להעביר לבדיקה."
+    if any(word in transcript for word in ("פיטור", "שימוע", "שכר", "מעסיק")):
+        first_sentence = "זה נשמע כמו עניין שיכול להיות רלוונטי לדיני עבודה, אבל צריך להבין את השלב והמסמכים."
+
+    return f"{first_sentence} {questions[0]}"
 
 
 def _build_notification_body(

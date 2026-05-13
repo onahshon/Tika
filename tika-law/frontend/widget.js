@@ -63,10 +63,10 @@
     var headerAvatar = document.createElement("img");
     var headerText = createElement("div");
     var title = createElement("h2", "tika-law-title", "Tika Law");
-    var subtitle = createElement("p", "tika-law-subtitle", "מזכירה משפטית חכמה");
+    var subtitle = createElement("p", "tika-law-subtitle", "תיאום ובירור ראשוני");
     var closeButton = createElement("button", "tika-law-close", "×");
     var messages = createElement("div", "tika-law-messages");
-    var disclaimer = createElement("div", "tika-law-disclaimer", "איסוף מידע ראשוני בלבד, לא ייעוץ משפטי.");
+    var disclaimer = createElement("div", "tika-law-disclaimer", "שיחה ראשונית בלבד, לא ייעוץ משפטי.");
     var composer = createElement("form", "tika-law-composer");
     var input = createElement("input", "tika-law-input");
     var send = createElement("button", "tika-law-send", "↑");
@@ -97,7 +97,7 @@
     appendMessage(
       messages,
       "bot",
-      "שלום, אני המזכירה הדיגיטלית של המשרד. אוכל לשאול כמה שאלות קצרות כדי לבדוק התאמה ראשונית לעורך דין לדיני עבודה. מה קרה?"
+      "שלום, אני מרכזת את הפניות הראשוניות למשרד. ספר/י לי בקצרה מה קרה בעבודה, ומשם אשאל כמה שאלות ממוקדות כדי להבין באיזה שלב זה נמצא."
     );
 
     launcher.addEventListener("click", function () {
