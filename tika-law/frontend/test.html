@@ -24,6 +24,7 @@
 
       main {
         width: min(92vw, 520px);
+        padding: 32px 0;
       }
 
       .controls {
@@ -39,11 +40,16 @@
         font-weight: 700;
       }
 
-      input {
+      input,
+      textarea {
         border: 1px solid #cfd6df;
         border-radius: 6px;
         padding: 10px 12px;
         font: inherit;
+      }
+
+      textarea {
+        resize: vertical;
       }
 
       .tika-law-widget {
@@ -52,6 +58,18 @@
         background: #ffffff;
         padding: 20px;
         box-shadow: 0 12px 32px rgb(23 32 42 / 8%);
+      }
+
+      .tika-law-widget__form {
+        display: grid;
+        gap: 12px;
+      }
+
+      .tika-law-widget__field {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 700;
       }
 
       .tika-law-widget__title {
@@ -81,9 +99,45 @@
         background: #185abc;
       }
 
-      .tika-law-widget__status {
+      .tika-law-widget__button:disabled {
+        cursor: wait;
+        opacity: 0.7;
+      }
+
+      .tika-law-widget__status,
+      .tika-law-widget__message,
+      .tika-law-widget__disclaimer {
         margin-top: 16px;
         color: #44546a;
+      }
+
+      .tika-law-widget__result-title {
+        margin: 20px 0 8px;
+        font-size: 18px;
+      }
+
+      .tika-law-widget__badge {
+        display: inline-block;
+        margin: 0 0 8px;
+        border-radius: 6px;
+        background: #e8f0fe;
+        color: #174ea6;
+        padding: 6px 10px;
+        font-weight: 700;
+      }
+
+      .tika-law-widget__questions-title {
+        margin: 12px 0 6px;
+        font-weight: 700;
+      }
+
+      .tika-law-widget__questions {
+        margin: 0;
+        padding-inline-start: 24px;
+      }
+
+      .tika-law-widget__disclaimer {
+        font-size: 13px;
       }
     </style>
   </head>

@@ -1,9 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter()
+from backend.app.api.v1.intake import router as intake_router
 
-# Future MVP routes:
-# - /intake
-# - /leads
-# - /conversations
-# Product endpoints should depend on require_attorney_id.
+router = APIRouter()
+router.include_router(intake_router)

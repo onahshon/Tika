@@ -123,14 +123,18 @@ alembic upgrade head
 
 ## MVP Scope
 
-Included later:
+Included now:
 
 - Structured lead intake
-- Hebrew-first follow-up questions
+- Basic Hebrew-first follow-up questions
 - Lead quality scoring
 - Lead classification
+
+Included later:
+
 - Attorney notification
-- Conversation persistence
+- PostgreSQL-backed conversation persistence
+- OpenAI-assisted follow-up strategy
 
 Out of scope for now:
 
