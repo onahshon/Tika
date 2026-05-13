@@ -50,6 +50,8 @@ class IntakeState:
     history: list[dict[str, str]] = field(default_factory=list)
     asked_counts: dict[str, int] = field(default_factory=dict)
     asked_questions: set[str] = field(default_factory=set)
+    last_asked_slot: str | None = None
+    retry_count: int = 0
     turn_count: int = 0
     finalized: bool = False
 
@@ -85,15 +87,26 @@ def advance_intake(
 ) -> IntakeDecision:
     state.turn_count += 1
     state.history.append({"role": "user", "content": message})
-    _merge_slots(state.slots, extract_slots(message))
+
+    incoming_slots = extract_slots(message)
+    if state.last_asked_slot:
+        incoming_slots.update(_extract_for_current_slot(state.last_asked_slot, message))
     if external_slots:
-        _merge_slots(state.slots, external_slots)
+        incoming_slots.update(external_slots)
+
+    new_slots = _new_slots(state.slots, incoming_slots)
+    if new_slots:
+        state.retry_count = 0
+        _merge_slots(state.slots, incoming_slots)
+    elif state.last_asked_slot:
+        return _handle_unclear_answer(state, message, phrase_fn)
 
     score = score_state(state)
     classification = classify_state(state, score)
 
     if CONTACT_SLOT in state.slots and _ready_for_review(state):
         state.finalized = True
+        state.last_asked_slot = None
         reply = "אוקיי. אעביר לעורך הדין סיכום קצר לבדיקה."
         reply = _phrase_or_default(phrase_fn, None, reply, classification, score, state, message)
         state.history.append({"role": "assistant", "content": reply})
@@ -105,6 +118,7 @@ def advance_intake(
         and state.asked_counts.get(CONTACT_SLOT, 0) >= 1
     ):
         state.finalized = True
+        state.last_asked_slot = None
         reply = "אין בעיה. בלי טלפון לא אעביר למשרד כרגע."
         reply = _phrase_or_default(phrase_fn, None, reply, classification, score, state, message)
         state.history.append({"role": "assistant", "content": reply})
@@ -112,6 +126,7 @@ def advance_intake(
 
     if classification == "not_relevant" and state.turn_count >= 2:
         reply = "זה לא נשמע כמו דיני עבודה. יש קשר למעסיק?"
+        state.last_asked_slot = "issue"
         reply = _phrase_or_default(phrase_fn, None, reply, classification, score, state, message)
         state.history.append({"role": "assistant", "content": reply})
         return IntakeDecision(reply, classification, score, False, ["יש קשר למעסיק?"])
@@ -119,6 +134,7 @@ def advance_intake(
     next_slot = select_next_slot(state)
     if next_slot is None:
         state.finalized = True
+        state.last_asked_slot = None
         if _ready_for_review(state) and CONTACT_SLOT not in state.slots:
             reply = "אין בעיה. בלי טלפון לא אעביר למשרד כרגע."
         else:
@@ -129,6 +145,7 @@ def advance_intake(
 
     question = QUESTION_COPY[next_slot]
     _mark_asked(state, next_slot, question)
+    state.last_asked_slot = next_slot
     assistant_message = _prefix_for_state(state, next_slot) + question
     assistant_message = _phrase_or_default(
         phrase_fn,
@@ -298,10 +315,123 @@ def _mark_asked(state: IntakeState, slot: str, question: str) -> None:
     state.asked_questions.add(question)
 
 
+def _new_slots(existing: dict[str, str], incoming: dict[str, str]) -> dict[str, str]:
+    return {
+        key: value
+        for key, value in incoming.items()
+        if value and key not in existing
+    }
+
+
 def _merge_slots(existing: dict[str, str], incoming: dict[str, str]) -> None:
     for key, value in incoming.items():
         if value and key not in existing:
             existing[key] = value
+
+
+def _handle_unclear_answer(
+    state: IntakeState,
+    message: str,
+    phrase_fn: PhraseFn | None,
+) -> IntakeDecision:
+    score = score_state(state)
+    classification = classify_state(state, score)
+
+    if state.retry_count < 2:
+        state.retry_count += 1
+        canonical = "retry_unclear_answer"
+        reply = _phrase_or_default(
+            phrase_fn,
+            state.last_asked_slot,
+            canonical,
+            classification,
+            score,
+            state,
+            message,
+        )
+        if reply == canonical:
+            reply = "לא הצלחתי להבין, אפשר לפרט קצת יותר?"
+        state.history.append({"role": "assistant", "content": reply})
+        return IntakeDecision(reply, classification, score, False, [QUESTION_COPY.get(state.last_asked_slot, "")])
+
+    state.last_asked_slot = CONTACT_SLOT
+    canonical = "fallback_after_retries"
+    reply = _phrase_or_default(
+        phrase_fn,
+        CONTACT_SLOT,
+        canonical,
+        classification,
+        score,
+        state,
+        message,
+    )
+    if reply == canonical:
+        reply = "אשמח אם תשאיר/י מספר טלפון ועורכת הדין תחזור אליך."
+    state.history.append({"role": "assistant", "content": reply})
+    return IntakeDecision(reply, classification, score, False, [QUESTION_COPY[CONTACT_SLOT]])
+
+
+def _extract_for_current_slot(slot: str, message: str) -> dict[str, str]:
+    lowered = message.strip().lower()
+    if not lowered:
+        return {}
+
+    if slot == "employer_duration":
+        result: dict[str, str] = {}
+        employer = _extract_employer(message)
+        duration = _extract_duration(message)
+        if employer:
+            result["employer"] = employer
+        if duration:
+            result["employment_duration"] = duration
+        return result
+
+    if slot == "employment_status":
+        status = _extract_status(lowered)
+        return {"employment_status": status} if status else {}
+
+    if slot == "procedural_stage":
+        stage = _extract_procedural_stage(lowered)
+        return {"procedural_stage": stage} if stage else {}
+
+    if slot == "documentation":
+        if _is_yes(lowered):
+            return {"documentation": "has_documents"}
+        if _is_no(lowered):
+            return {"documentation": "no_documents"}
+        docs = _extract_documentation(lowered)
+        return {"documentation": docs} if docs else {}
+
+    if slot == "urgency":
+        timing = _extract_timing(lowered)
+        if timing:
+            return {"urgency": timing}
+        if _is_no(lowered):
+            return {"urgency": "not_urgent"}
+        return {}
+
+    if slot == "signed_docs":
+        if _is_yes(lowered):
+            return {"signed_docs": "requested_or_signed"}
+        if _is_no(lowered):
+            return {"signed_docs": "not_signed"}
+        signed = _extract_signed_docs(lowered)
+        return {"signed_docs": signed} if signed else {}
+
+    if slot == CONTACT_SLOT:
+        contact = _extract_contact(message)
+        return {CONTACT_SLOT: contact} if contact else {}
+
+    return {}
+
+
+def _is_yes(text: str) -> bool:
+    return text in {"כן", "כן.", "yes", "ok", "אוקיי", "בטח"} or text.startswith("כן ")
+
+
+def _is_no(text: str) -> bool:
+    return text in {"לא", "לא.", "no"} or text.startswith("לא ")
+
 
 
 def _phrase_or_default(

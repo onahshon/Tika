@@ -1,4 +1,5 @@
 from uuid import uuid4
+import re
 
 from backend.app.schemas.chat import ChatMessageRequest, ChatMessageResponse
 from backend.app.services.intake_engine import (
@@ -20,7 +21,7 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
         IntakeState(conversation_id=conversation_id, attorney_id=request.attorney_id),
     )
 
-    extracted_slots = extract_with_openai(request.message)
+    extracted_slots = {} if is_gibberish(request.message) else extract_with_openai(request.message)
     decision = advance_intake(
         state,
         request.message,
@@ -46,3 +47,26 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
         notification_sent=notification_sent,
         suggested_next_questions=decision.suggested_next_questions,
     )
+
+
+def is_gibberish(message: str) -> bool:
+    text = message.strip()
+    lowered = text.lower()
+    common_words = {"כן", "לא", "yes", "no", "ok", "okay", "אוקיי"}
+
+    if len(text) < 2:
+        return True
+    if lowered in common_words:
+        return False
+
+    has_hebrew = bool(re.search(r"[\u0590-\u05ff]", text))
+    has_digit = bool(re.search(r"\d", text))
+    if not has_hebrew and not has_digit:
+        return True
+
+    compact = re.sub(r"\s+", "", lowered)
+    unique_chars = set(compact)
+    if len(compact) >= 3 and len(unique_chars) <= 2:
+        return True
+
+    return False
