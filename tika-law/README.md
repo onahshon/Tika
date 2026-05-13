@@ -138,9 +138,9 @@ alembic upgrade head
 Included now:
 
 - Floating Hebrew-first chat widget
-- AI-assisted intake when `OPENAI_API_KEY` is configured
-- Rule-based fallback chat when OpenAI is unavailable
-- Lead quality scoring from the conversation
+- Backend-controlled conversational intake engine
+- Structured slot tracking and loop prevention
+- Lead quality scoring from intake state
 - Lead classification
 - Optional attorney email notification through SMTP settings
 
@@ -149,6 +149,7 @@ Included later:
 - Persistent structured lead intake
 - PostgreSQL-backed conversation persistence
 - Attorney-specific configuration stored in the database
+- OpenAI-assisted semantic extraction and wording under backend flow control
 
 Out of scope for now:
 

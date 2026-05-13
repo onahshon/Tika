@@ -20,3 +20,13 @@ Placeholder for product flows, lead scoring criteria, Hebrew prompt strategy, da
 - Contact details should be requested only after the matter appears relevant and worth attorney review.
 - Light procedural guidance is allowed when cautious and non-conclusive, such as preserving documents or avoiding signing documents before review.
 - The assistant must not provide legal conclusions, determine rights, promise outcomes, or say that the user has a case.
+
+## Orchestration Rules
+
+- The backend owns the intake flow through structured state and slot tracking.
+- The LLM must not decide the next required slot on its own.
+- Slots include issue, employer, employment duration, current status, procedural stage, documentation, urgency, signed documents, and contact.
+- Once a slot is semantically resolved, it must not be asked again.
+- Each question slot has a retry limit to prevent loops.
+- Contact details are requested only after enough high-signal context exists.
+- Most conversations should complete or triage out within 4-7 exchanges.
