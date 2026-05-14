@@ -15,17 +15,85 @@
     var style = createElement("style");
     style.id = "tika-law-widget-styles";
     style.textContent =
-      ".tika-law-launcher{position:fixed;right:24px;bottom:24px;z-index:2147483000;width:62px;height:62px;border:0;border-radius:50%;background:#2f6fed;color:#fff;box-shadow:0 16px 40px rgba(20,31,56,.25);font:700 18px Arial,sans-serif;cursor:pointer}" +
-      ".tika-law-panel{position:fixed;right:24px;bottom:98px;z-index:2147483000;width:min(380px,calc(100vw - 32px));height:min(620px,calc(100vh - 128px));display:none;flex-direction:column;overflow:hidden;border-radius:22px;background:#f2f4ef;box-shadow:0 22px 70px rgba(20,31,56,.28);font-family:Arial,'Noto Sans Hebrew',sans-serif;color:#1f2937;direction:rtl}" +
+      /* CSS custom property defaults scoped to widget root */
+      ".tika-law-root{" +
+        "--tika-primary:#0077E6;--tika-primary-hover:#0068CC;" +
+        "--tika-widget-bg:#FFFFFF;--tika-page-bg:#F5F7FA;--tika-border:#E1E7F0;" +
+        "--tika-text-primary:#0F172A;--tika-text-secondary:#64748B;--tika-text-muted:#94A3B8;" +
+        "--tika-bot-bubble-bg:#EAF3FF;--tika-bot-bubble-text:#1E293B;" +
+        "--tika-user-bubble-bg:#0077E6;--tika-user-bubble-text:#FFFFFF;" +
+        "--tika-input-border:#DCE4EE;" +
+      "}" +
+
+      ".tika-law-launcher{position:fixed;right:24px;bottom:24px;z-index:2147483000;width:60px;height:60px;border:0;border-radius:50%;background:var(--tika-primary);color:#fff;box-shadow:0 4px 20px rgba(0,119,230,.28);font:700 18px Arial,sans-serif;cursor:pointer;transition:background .15s}" +
+      ".tika-law-launcher:hover{background:var(--tika-primary-hover)}" +
+
+      ".tika-law-panel{position:fixed;right:24px;bottom:96px;z-index:2147483000;width:min(380px,calc(100vw - 32px));height:min(620px,calc(100vh - 120px));display:none;flex-direction:column;overflow:hidden;border-radius:16px;background:var(--tika-widget-bg);border:1px solid var(--tika-border);box-shadow:0 8px 36px rgba(15,23,42,.10);font-family:Arial,'Noto Sans Hebrew',sans-serif;color:var(--tika-text-primary);direction:rtl}" +
       ".tika-law-panel.is-open{display:flex}" +
-      ".tika-law-header{display:flex;align-items:center;gap:10px;padding:16px 18px;background:#fff;border-bottom:1px solid #dde3ea}" +
-      ".tika-law-header img{width:38px;height:38px;border-radius:50%}.tika-law-title{margin:0;font-size:16px}.tika-law-subtitle{margin:2px 0 0;color:#64748b;font-size:12px}.tika-law-close{margin-inline-start:auto;border:0;background:#edf1f5;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:18px}" +
-      ".tika-law-messages{flex:1;overflow:auto;padding:18px 16px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(180deg,#f7f8f3,#eef2ec)}" +
-      ".tika-law-row{display:flex;gap:9px;align-items:flex-end}.tika-law-row.is-user{flex-direction:row-reverse}.tika-law-avatar{width:34px;height:34px;border-radius:50%;flex:0 0 auto}.tika-law-bubble{max-width:76%;padding:12px 14px;border-radius:16px;line-height:1.45;font-size:14px;white-space:pre-wrap}.tika-law-row.is-bot .tika-law-bubble{background:#36383d;color:#fff;border-bottom-right-radius:5px}.tika-law-row.is-user .tika-law-bubble{background:#fff;color:#1f2937;border:1px solid #dbe2ea;border-bottom-left-radius:5px}" +
-      ".tika-law-meta{font-size:11px;color:#718096;margin-top:4px}.tika-law-composer{display:flex;gap:8px;align-items:center;padding:12px;background:#fff;border-top:1px solid #dde3ea}.tika-law-input{flex:1;min-width:0;border:1px solid #d7dee8;border-radius:999px;padding:11px 14px;font:14px Arial,sans-serif;outline:none}.tika-law-input:focus{border-color:#2f6fed}.tika-law-send{width:42px;height:42px;border:0;border-radius:50%;background:#2f6fed;color:#fff;font-size:18px;cursor:pointer}.tika-law-send:disabled{opacity:.55;cursor:wait}.tika-law-disclaimer{padding:8px 14px;background:#fff;color:#64748b;font-size:11px;text-align:center}" +
-      ".tika-law-typing{display:flex;gap:5px;align-items:center;padding:10px 14px}.tika-law-typing span{width:7px;height:7px;border-radius:50%;background:#adb5bd;animation:tika-bounce 1.2s infinite ease-in-out}.tika-law-typing span:nth-child(2){animation-delay:.2s}.tika-law-typing span:nth-child(3){animation-delay:.4s}@keyframes tika-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}" +
-      "@media (max-width:520px){.tika-law-panel{right:12px;bottom:88px;width:calc(100vw - 24px);height:calc(100vh - 112px)}.tika-law-launcher{right:18px;bottom:18px}}";
+
+      ".tika-law-header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--tika-widget-bg);border-bottom:1px solid var(--tika-border)}" +
+      ".tika-law-header img{width:36px;height:36px;border-radius:50%}" +
+      ".tika-law-title{margin:0;font-size:15px;font-weight:600;color:var(--tika-text-primary)}" +
+      ".tika-law-subtitle{margin:2px 0 0;font-size:12px;color:var(--tika-text-secondary)}" +
+      ".tika-law-close{margin-inline-start:auto;border:0;background:transparent;color:var(--tika-text-muted);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .12s}" +
+      ".tika-law-close:hover{background:var(--tika-page-bg)}" +
+
+      ".tika-law-messages{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--tika-page-bg)}" +
+
+      ".tika-law-row{display:flex;gap:8px;align-items:flex-end}" +
+      ".tika-law-row.is-user{flex-direction:row-reverse}" +
+      ".tika-law-avatar{width:32px;height:32px;border-radius:50%;flex:0 0 auto}" +
+      ".tika-law-bubble{max-width:78%;padding:10px 14px;border-radius:16px;line-height:1.5;font-size:14px;white-space:pre-wrap;word-break:break-word}" +
+      ".tika-law-row.is-bot .tika-law-bubble{background:var(--tika-bot-bubble-bg);color:var(--tika-bot-bubble-text);border-bottom-right-radius:4px}" +
+      ".tika-law-row.is-user .tika-law-bubble{background:var(--tika-user-bubble-bg);color:var(--tika-user-bubble-text);border-bottom-left-radius:4px}" +
+
+      ".tika-law-composer{display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--tika-widget-bg);border-top:1px solid var(--tika-border)}" +
+      ".tika-law-input{flex:1;min-width:0;border:1px solid var(--tika-input-border);border-radius:999px;padding:10px 14px;font:14px Arial,sans-serif;outline:none;background:var(--tika-widget-bg);color:var(--tika-text-primary)}" +
+      ".tika-law-input::placeholder{color:var(--tika-text-muted)}" +
+      ".tika-law-input:focus{border-color:var(--tika-primary);box-shadow:0 0 0 3px rgba(0,119,230,.10)}" +
+      ".tika-law-send{flex-shrink:0;width:40px;height:40px;border:0;border-radius:50%;background:var(--tika-primary);color:#fff;font-size:17px;cursor:pointer;transition:background .15s}" +
+      ".tika-law-send:hover:not(:disabled){background:var(--tika-primary-hover)}" +
+      ".tika-law-send:disabled{opacity:.5;cursor:wait}" +
+
+      ".tika-law-disclaimer{padding:6px 14px;background:var(--tika-widget-bg);border-top:1px solid var(--tika-border);color:var(--tika-text-muted);font-size:11px;text-align:center}" +
+
+      ".tika-law-typing{display:flex;gap:5px;align-items:center;padding:8px 14px}" +
+      ".tika-law-typing span{width:6px;height:6px;border-radius:50%;background:var(--tika-text-muted);animation:tika-bounce 1.2s infinite ease-in-out}" +
+      ".tika-law-typing span:nth-child(2){animation-delay:.2s}" +
+      ".tika-law-typing span:nth-child(3){animation-delay:.4s}" +
+      "@keyframes tika-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}" +
+
+      "@media(max-width:520px){" +
+        ".tika-law-panel{right:12px;bottom:84px;width:calc(100vw - 24px);height:calc(100vh - 108px)}" +
+        ".tika-law-launcher{right:16px;bottom:16px}" +
+      "}";
+
     document.head.appendChild(style);
+  }
+
+  /* Theme variable map: config.theme key → CSS custom property */
+  var THEME_MAP = {
+    primary:         "--tika-primary",
+    primaryHover:    "--tika-primary-hover",
+    widgetBg:        "--tika-widget-bg",
+    pageBg:          "--tika-page-bg",
+    border:          "--tika-border",
+    textPrimary:     "--tika-text-primary",
+    textSecondary:   "--tika-text-secondary",
+    textMuted:       "--tika-text-muted",
+    botBubbleBg:     "--tika-bot-bubble-bg",
+    botBubbleText:   "--tika-bot-bubble-text",
+    userBubbleBg:    "--tika-user-bubble-bg",
+    userBubbleText:  "--tika-user-bubble-text",
+    inputBorder:     "--tika-input-border",
+  };
+
+  function applyTheme(root, theme) {
+    if (!theme) return;
+    Object.keys(theme).forEach(function (key) {
+      var prop = THEME_MAP[key];
+      if (prop) root.style.setProperty(prop, theme[key]);
+    });
   }
 
   function showTyping(messages) {
@@ -54,7 +122,6 @@
     avatar.alt = role === "user" ? "User" : "Tika Law";
     avatar.src = assetBaseUrl + "/assets/" + (role === "user" ? "user-avatar.svg" : "bot-avatar.svg");
     var bubble = createElement("div", "tika-law-bubble", text);
-
     row.appendChild(avatar);
     row.appendChild(bubble);
     messages.appendChild(row);
@@ -77,6 +144,8 @@
 
     var conversationId = null;
     var root = createElement("div", "tika-law-root");
+    applyTheme(root, config.theme);
+
     var launcher = createElement("button", "tika-law-launcher", "TL");
     var panel = createElement("section", "tika-law-panel");
     var header = createElement("header", "tika-law-header");
