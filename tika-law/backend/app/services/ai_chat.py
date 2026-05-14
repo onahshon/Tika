@@ -33,6 +33,7 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
             request.message,
             last_asked_slot=state.last_asked_slot,
             last_question=last_question,
+            history=state.history,
         )
     )
     decision = advance_intake(

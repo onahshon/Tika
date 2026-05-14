@@ -74,6 +74,7 @@ class PhraseContext:
     slots: dict[str, str]
     latest_user_message: str
     turn_count: int
+    history: list[dict[str, str]] = field(default_factory=list)
 
 
 PhraseFn = Callable[[PhraseContext], str | None]
@@ -455,6 +456,7 @@ def _phrase_or_default(
             slots=dict(state.slots),
             latest_user_message=latest_user_message,
             turn_count=state.turn_count,
+            history=list(state.history),
         )
     )
     return phrased or canonical_message
