@@ -23,8 +23,28 @@
       ".tika-law-messages{flex:1;overflow:auto;padding:18px 16px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(180deg,#f7f8f3,#eef2ec)}" +
       ".tika-law-row{display:flex;gap:9px;align-items:flex-end}.tika-law-row.is-user{flex-direction:row-reverse}.tika-law-avatar{width:34px;height:34px;border-radius:50%;flex:0 0 auto}.tika-law-bubble{max-width:76%;padding:12px 14px;border-radius:16px;line-height:1.45;font-size:14px;white-space:pre-wrap}.tika-law-row.is-bot .tika-law-bubble{background:#36383d;color:#fff;border-bottom-right-radius:5px}.tika-law-row.is-user .tika-law-bubble{background:#fff;color:#1f2937;border:1px solid #dbe2ea;border-bottom-left-radius:5px}" +
       ".tika-law-meta{font-size:11px;color:#718096;margin-top:4px}.tika-law-composer{display:flex;gap:8px;align-items:center;padding:12px;background:#fff;border-top:1px solid #dde3ea}.tika-law-input{flex:1;min-width:0;border:1px solid #d7dee8;border-radius:999px;padding:11px 14px;font:14px Arial,sans-serif;outline:none}.tika-law-input:focus{border-color:#2f6fed}.tika-law-send{width:42px;height:42px;border:0;border-radius:50%;background:#2f6fed;color:#fff;font-size:18px;cursor:pointer}.tika-law-send:disabled{opacity:.55;cursor:wait}.tika-law-disclaimer{padding:8px 14px;background:#fff;color:#64748b;font-size:11px;text-align:center}" +
+      ".tika-law-typing{display:flex;gap:5px;align-items:center;padding:10px 14px}.tika-law-typing span{width:7px;height:7px;border-radius:50%;background:#adb5bd;animation:tika-bounce 1.2s infinite ease-in-out}.tika-law-typing span:nth-child(2){animation-delay:.2s}.tika-law-typing span:nth-child(3){animation-delay:.4s}@keyframes tika-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}" +
       "@media (max-width:520px){.tika-law-panel{right:12px;bottom:88px;width:calc(100vw - 24px);height:calc(100vh - 112px)}.tika-law-launcher{right:18px;bottom:18px}}";
     document.head.appendChild(style);
+  }
+
+  function showTyping(messages) {
+    var row = createElement("div", "tika-law-row is-bot tika-law-typing-row");
+    var avatar = document.createElement("img");
+    avatar.className = "tika-law-avatar";
+    avatar.alt = "Tika Law";
+    avatar.src = assetBaseUrl + "/assets/bot-avatar.svg";
+    var dots = createElement("div", "tika-law-bubble tika-law-typing");
+    dots.innerHTML = "<span></span><span></span><span></span>";
+    row.appendChild(avatar);
+    row.appendChild(dots);
+    messages.appendChild(row);
+    messages.scrollTop = messages.scrollHeight;
+    return row;
+  }
+
+  function hideTyping(row) {
+    if (row && row.parentNode) row.parentNode.removeChild(row);
   }
 
   function appendMessage(messages, role, text) {
@@ -116,6 +136,7 @@
       input.value = "";
       send.disabled = true;
       appendMessage(messages, "user", message);
+      var typingRow = showTyping(messages);
 
       fetch(config.apiBaseUrl.replace(/\/$/, "") + "/api/v1/chat/message", {
         method: "POST",
@@ -138,10 +159,12 @@
           return response.json();
         })
         .then(function (data) {
+          hideTyping(typingRow);
           conversationId = data.conversation_id;
           appendMessage(messages, "bot", data.assistant_message);
         })
         .catch(function (error) {
+          hideTyping(typingRow);
           appendMessage(messages, "bot", "מצטערת, הייתה תקלה בחיבור. אפשר לנסות שוב בעוד רגע. " + error.message);
         })
         .finally(function () {
