@@ -10,8 +10,4 @@ class ChatMessageRequest(BaseModel):
 class ChatMessageResponse(BaseModel):
     conversation_id: str
     assistant_message: str
-    classification: str
-    score: int
-    lead_captured: bool
     notification_sent: bool
-    suggested_next_questions: list[str]

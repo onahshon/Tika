@@ -4,7 +4,6 @@ from typing import Any
 from openai import AsyncOpenAI
 
 from backend.app.core.config import settings
-from backend.app.services.intake_engine import IntakeState
 
 CONVERSATION_PROMPT = """
 Tika Law Intake is an AI intake assistant for Israeli employment-law attorneys. Its purpose is to
@@ -133,20 +132,12 @@ def _get_client() -> AsyncOpenAI:
     return _client
 
 
-async def converse_with_openai(state: IntakeState) -> dict[str, Any] | None:
+async def converse_with_openai(history: list[dict[str, str]]) -> dict[str, Any] | None:
     if not settings.openai_api_key:
         return None
 
-    system_content = CONVERSATION_PROMPT
-    if state.slots:
-        known = "\n".join(f"- {k}: {v}" for k, v in state.slots.items() if v)
-        if known:
-            system_content += (
-                f"\n\nInformation already collected — do not re-ask:\n{known}"
-            )
-
-    messages: list[dict[str, str]] = [{"role": "system", "content": system_content}]
-    messages.extend(state.history[-12:])
+    messages: list[dict[str, str]] = [{"role": "system", "content": CONVERSATION_PROMPT}]
+    messages.extend(history[-12:])
 
     try:
         response = await _get_client().chat.completions.create(
