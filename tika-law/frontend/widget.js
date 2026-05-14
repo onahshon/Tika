@@ -2,20 +2,51 @@
   var scriptSrc = document.currentScript && document.currentScript.src;
   var assetBaseUrl = scriptSrc ? scriptSrc.replace(/\/widget\.js(?:\?.*)?$/, "") : "";
 
+  /* ── SVG icons ─────────────────────────────────────────────────────────── */
+  var SVG_SCALE =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" width="18" height="18">' +
+    '<line x1="12" y1="2" x2="12" y2="20"/>' +
+    '<line x1="9" y1="20" x2="15" y2="20"/>' +
+    '<line x1="3" y1="6" x2="21" y2="6"/>' +
+    '<line x1="3" y1="6" x2="3" y2="12"/>' +
+    '<path d="M1 12 Q3 14.5 5 12"/>' +
+    '<line x1="21" y1="6" x2="21" y2="12"/>' +
+    '<path d="M19 12 Q21 14.5 23 12"/>' +
+    '</svg>';
+
+  var SVG_PLANE =
+    '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">' +
+    '<path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>' +
+    '</svg>';
+
+  var SVG_USER =
+    '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">' +
+    '<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12z"/>' +
+    '<path d="M12 14.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>' +
+    '</svg>';
+
+  /* ── DOM helpers ────────────────────────────────────────────────────────── */
   function createElement(tagName, className, text) {
-    var element = document.createElement(tagName);
-    if (className) element.className = className;
-    if (text) element.textContent = text;
-    return element;
+    var el = document.createElement(tagName);
+    if (className) el.className = className;
+    if (text) el.textContent = text;
+    return el;
   }
 
+  function makeAvatar(role) {
+    var el = createElement("div", "tika-law-avatar tika-law-avatar-" + role);
+    el.innerHTML = role === "user" ? SVG_USER : SVG_SCALE;
+    return el;
+  }
+
+  /* ── Styles ─────────────────────────────────────────────────────────────── */
   function injectStyles() {
     if (document.querySelector("#tika-law-widget-styles")) return;
 
     var style = createElement("style");
     style.id = "tika-law-widget-styles";
     style.textContent =
-      /* CSS custom property defaults scoped to widget root */
       ".tika-law-root{" +
         "--tika-primary:#0077E6;--tika-primary-hover:#0068CC;" +
         "--tika-widget-bg:#FFFFFF;--tika-page-bg:#F5F7FA;--tika-border:#E1E7F0;" +
@@ -25,37 +56,45 @@
         "--tika-input-border:#DCE4EE;" +
       "}" +
 
-      ".tika-law-launcher{position:fixed;right:24px;bottom:24px;z-index:2147483000;width:60px;height:60px;border:0;border-radius:50%;background:var(--tika-primary);color:#fff;box-shadow:0 4px 20px rgba(0,119,230,.28);font:700 18px Arial,sans-serif;cursor:pointer;transition:background .15s}" +
+      ".tika-law-launcher{position:fixed;right:24px;bottom:24px;z-index:2147483000;width:60px;height:60px;border:0;border-radius:50%;background:var(--tika-primary);color:#fff;box-shadow:0 4px 20px rgba(0,119,230,.30);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}" +
       ".tika-law-launcher:hover{background:var(--tika-primary-hover)}" +
 
       ".tika-law-panel{position:fixed;right:24px;bottom:96px;z-index:2147483000;width:min(380px,calc(100vw - 32px));height:min(620px,calc(100vh - 120px));display:none;flex-direction:column;overflow:hidden;border-radius:16px;background:var(--tika-widget-bg);border:1px solid var(--tika-border);box-shadow:0 8px 36px rgba(15,23,42,.10);font-family:Arial,'Noto Sans Hebrew',sans-serif;color:var(--tika-text-primary);direction:rtl}" +
       ".tika-law-panel.is-open{display:flex}" +
 
       ".tika-law-header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--tika-widget-bg);border-bottom:1px solid var(--tika-border)}" +
-      ".tika-law-header img{width:36px;height:36px;border-radius:50%}" +
       ".tika-law-title{margin:0;font-size:15px;font-weight:600;color:var(--tika-text-primary)}" +
       ".tika-law-subtitle{margin:2px 0 0;font-size:12px;color:var(--tika-text-secondary)}" +
-      ".tika-law-close{margin-inline-start:auto;border:0;background:transparent;color:var(--tika-text-muted);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .12s}" +
+      ".tika-law-close{margin-inline-start:auto;border:0;background:transparent;color:var(--tika-text-muted);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:background .12s}" +
       ".tika-law-close:hover{background:var(--tika-page-bg)}" +
 
-      ".tika-law-messages{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--tika-page-bg)}" +
+      /* chat area: white */
+      ".tika-law-messages{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--tika-widget-bg)}" +
+
+      ".tika-law-avatar{width:32px;height:32px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center}" +
+      ".tika-law-avatar-bot{background:var(--tika-primary);color:#fff}" +
+      ".tika-law-avatar-user{background:var(--tika-page-bg);color:var(--tika-text-secondary)}" +
 
       ".tika-law-row{display:flex;gap:8px;align-items:flex-end}" +
       ".tika-law-row.is-user{flex-direction:row-reverse}" +
-      ".tika-law-avatar{width:32px;height:32px;border-radius:50%;flex:0 0 auto}" +
       ".tika-law-bubble{max-width:78%;padding:10px 14px;border-radius:16px;line-height:1.5;font-size:14px;white-space:pre-wrap;word-break:break-word}" +
       ".tika-law-row.is-bot .tika-law-bubble{background:var(--tika-bot-bubble-bg);color:var(--tika-bot-bubble-text);border-bottom-right-radius:4px}" +
       ".tika-law-row.is-user .tika-law-bubble{background:var(--tika-user-bubble-bg);color:var(--tika-user-bubble-text);border-bottom-left-radius:4px}" +
 
-      ".tika-law-composer{display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--tika-widget-bg);border-top:1px solid var(--tika-border)}" +
+      /* message pop-in animation */
+      "@keyframes tika-pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}" +
+      ".tika-law-row{animation:tika-pop .22s ease}" +
+
+      /* composer area: light gray */
+      ".tika-law-composer{display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--tika-page-bg);border-top:1px solid var(--tika-border)}" +
       ".tika-law-input{flex:1;min-width:0;border:1px solid var(--tika-input-border);border-radius:999px;padding:10px 14px;font:14px Arial,sans-serif;outline:none;background:var(--tika-widget-bg);color:var(--tika-text-primary)}" +
       ".tika-law-input::placeholder{color:var(--tika-text-muted)}" +
       ".tika-law-input:focus{border-color:var(--tika-primary);box-shadow:0 0 0 3px rgba(0,119,230,.10)}" +
-      ".tika-law-send{flex-shrink:0;width:40px;height:40px;border:0;border-radius:50%;background:var(--tika-primary);color:#fff;font-size:17px;cursor:pointer;transition:background .15s}" +
+      ".tika-law-send{flex-shrink:0;width:40px;height:40px;border:0;border-radius:50%;background:var(--tika-primary);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}" +
       ".tika-law-send:hover:not(:disabled){background:var(--tika-primary-hover)}" +
       ".tika-law-send:disabled{opacity:.5;cursor:wait}" +
 
-      ".tika-law-disclaimer{padding:6px 14px;background:var(--tika-widget-bg);border-top:1px solid var(--tika-border);color:var(--tika-text-muted);font-size:11px;text-align:center}" +
+      ".tika-law-disclaimer{padding:6px 14px;background:var(--tika-page-bg);border-top:1px solid var(--tika-border);color:var(--tika-text-muted);font-size:11px;text-align:center}" +
 
       ".tika-law-typing{display:flex;gap:5px;align-items:center;padding:8px 14px}" +
       ".tika-law-typing span{width:6px;height:6px;border-radius:50%;background:var(--tika-text-muted);animation:tika-bounce 1.2s infinite ease-in-out}" +
@@ -71,21 +110,21 @@
     document.head.appendChild(style);
   }
 
-  /* Theme variable map: config.theme key → CSS custom property */
+  /* ── Theme ──────────────────────────────────────────────────────────────── */
   var THEME_MAP = {
-    primary:         "--tika-primary",
-    primaryHover:    "--tika-primary-hover",
-    widgetBg:        "--tika-widget-bg",
-    pageBg:          "--tika-page-bg",
-    border:          "--tika-border",
-    textPrimary:     "--tika-text-primary",
-    textSecondary:   "--tika-text-secondary",
-    textMuted:       "--tika-text-muted",
-    botBubbleBg:     "--tika-bot-bubble-bg",
-    botBubbleText:   "--tika-bot-bubble-text",
-    userBubbleBg:    "--tika-user-bubble-bg",
-    userBubbleText:  "--tika-user-bubble-text",
-    inputBorder:     "--tika-input-border",
+    primary:        "--tika-primary",
+    primaryHover:   "--tika-primary-hover",
+    widgetBg:       "--tika-widget-bg",
+    pageBg:         "--tika-page-bg",
+    border:         "--tika-border",
+    textPrimary:    "--tika-text-primary",
+    textSecondary:  "--tika-text-secondary",
+    textMuted:      "--tika-text-muted",
+    botBubbleBg:    "--tika-bot-bubble-bg",
+    botBubbleText:  "--tika-bot-bubble-text",
+    userBubbleBg:   "--tika-user-bubble-bg",
+    userBubbleText: "--tika-user-bubble-text",
+    inputBorder:    "--tika-input-border",
   };
 
   function applyTheme(root, theme) {
@@ -96,15 +135,12 @@
     });
   }
 
+  /* ── Chat helpers ───────────────────────────────────────────────────────── */
   function showTyping(messages) {
     var row = createElement("div", "tika-law-row is-bot tika-law-typing-row");
-    var avatar = document.createElement("img");
-    avatar.className = "tika-law-avatar";
-    avatar.alt = "Tika Law";
-    avatar.src = assetBaseUrl + "/assets/bot-avatar.svg";
+    row.appendChild(makeAvatar("bot"));
     var dots = createElement("div", "tika-law-bubble tika-law-typing");
     dots.innerHTML = "<span></span><span></span><span></span>";
-    row.appendChild(avatar);
     row.appendChild(dots);
     messages.appendChild(row);
     messages.scrollTop = messages.scrollHeight;
@@ -117,17 +153,13 @@
 
   function appendMessage(messages, role, text) {
     var row = createElement("div", "tika-law-row " + (role === "user" ? "is-user" : "is-bot"));
-    var avatar = document.createElement("img");
-    avatar.className = "tika-law-avatar";
-    avatar.alt = role === "user" ? "User" : "Tika Law";
-    avatar.src = assetBaseUrl + "/assets/" + (role === "user" ? "user-avatar.svg" : "bot-avatar.svg");
-    var bubble = createElement("div", "tika-law-bubble", text);
-    row.appendChild(avatar);
-    row.appendChild(bubble);
+    row.appendChild(makeAvatar(role));
+    row.appendChild(createElement("div", "tika-law-bubble", text));
     messages.appendChild(row);
     messages.scrollTop = messages.scrollHeight;
   }
 
+  /* ── Init ───────────────────────────────────────────────────────────────── */
   function init(options) {
     var config = options || {};
     var mount =
@@ -146,27 +178,27 @@
     var root = createElement("div", "tika-law-root");
     applyTheme(root, config.theme);
 
-    var launcher = createElement("button", "tika-law-launcher", "TL");
+    var launcher = createElement("button", "tika-law-launcher");
+    launcher.type = "button";
+    launcher.innerHTML = SVG_SCALE;
+
     var panel = createElement("section", "tika-law-panel");
     var header = createElement("header", "tika-law-header");
-    var headerAvatar = document.createElement("img");
+    var headerAvatar = makeAvatar("bot");
     var headerText = createElement("div");
     var title = createElement("h2", "tika-law-title", "Tika Law");
     var subtitle = createElement("p", "tika-law-subtitle", "תיאום ובירור ראשוני");
     var closeButton = createElement("button", "tika-law-close", "×");
+    closeButton.type = "button";
     var messages = createElement("div", "tika-law-messages");
     var disclaimer = createElement("div", "tika-law-disclaimer", "שיחה ראשונית בלבד, לא ייעוץ משפטי.");
     var composer = createElement("form", "tika-law-composer");
     var input = createElement("input", "tika-law-input");
-    var send = createElement("button", "tika-law-send", "↑");
-
-    launcher.type = "button";
-    closeButton.type = "button";
     input.type = "text";
     input.placeholder = "כתוב/כתבי כאן...";
+    var send = createElement("button", "tika-law-send");
     send.type = "submit";
-    headerAvatar.alt = "Tika Law";
-    headerAvatar.src = assetBaseUrl + "/assets/bot-avatar.svg";
+    send.innerHTML = SVG_PLANE;
 
     headerText.appendChild(title);
     headerText.appendChild(subtitle);
