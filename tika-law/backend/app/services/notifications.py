@@ -43,6 +43,6 @@ def notify_attorney(
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=10) as res:
-            return res.status == 200
+            return 200 <= res.status < 300
     except Exception:
         return False
