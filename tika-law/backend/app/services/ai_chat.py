@@ -1,3 +1,5 @@
+import asyncio
+import time
 from uuid import uuid4
 
 from backend.app.schemas.chat import ChatMessageRequest, ChatMessageResponse
@@ -12,10 +14,24 @@ from backend.app.services.openai_intake import converse_with_openai
 
 CONVERSATIONS: dict[str, IntakeState] = {}
 NOTIFIED_CONVERSATIONS: set[str] = set()
+_TIMESTAMPS: dict[str, float] = {}
+_TTL = 2 * 60 * 60  # 2 hours
 
 
-def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
+def _prune_stale() -> None:
+    cutoff = time.time() - _TTL
+    stale = [cid for cid, ts in _TIMESTAMPS.items() if ts < cutoff]
+    for cid in stale:
+        CONVERSATIONS.pop(cid, None)
+        _TIMESTAMPS.pop(cid, None)
+        NOTIFIED_CONVERSATIONS.discard(cid)
+
+
+async def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
+    _prune_stale()
+
     conversation_id = request.conversation_id or str(uuid4())
+    _TIMESTAMPS[conversation_id] = time.time()
     state = CONVERSATIONS.setdefault(
         conversation_id,
         IntakeState(conversation_id=conversation_id, attorney_id=request.attorney_id),
@@ -35,7 +51,7 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
     state.turn_count += 1
     state.history.append({"role": "user", "content": request.message})
 
-    result = converse_with_openai(state)
+    result = await converse_with_openai(state)
 
     if result is None:
         reply = "מצטערת, יש תקלה זמנית. אפשר לנסות שוב בעוד רגע?"
@@ -63,7 +79,8 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
     notification_sent = False
 
     if lead_captured and conversation_id not in NOTIFIED_CONVERSATIONS:
-        notification_sent = notify_attorney(
+        notification_sent = await asyncio.to_thread(
+            notify_attorney,
             subject=f"Tika Law lead: {classification} ({score}/100)",
             body=build_summary(state),
         )

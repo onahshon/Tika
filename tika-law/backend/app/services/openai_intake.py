@@ -1,10 +1,10 @@
 import json
 from typing import Any
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from backend.app.core.config import settings
-from backend.app.services.intake_engine import IntakeState, PhraseContext
+from backend.app.services.intake_engine import IntakeState
 
 CONVERSATION_PROMPT = """
 You are the intake coordinator for an Israeli employment-law office.
@@ -92,20 +92,28 @@ urgency: immediate | near_term | dated | not_urgent
 signed_docs: signed | not_signed | requested
 """
 
+_client: AsyncOpenAI | None = None
 
-def converse_with_openai(state: IntakeState) -> dict[str, Any] | None:
+
+def _get_client() -> AsyncOpenAI:
+    global _client
+    if _client is None:
+        _client = AsyncOpenAI(api_key=settings.openai_api_key)
+    return _client
+
+
+async def converse_with_openai(state: IntakeState) -> dict[str, Any] | None:
     if not settings.openai_api_key:
         return None
 
     payload = {
-        "conversation": state.history,
+        "conversation": state.history[-12:],
         "known_slots": state.slots,
         "turn_count": state.turn_count,
     }
 
     try:
-        client = OpenAI(api_key=settings.openai_api_key)
-        response = client.chat.completions.create(
+        response = await _get_client().chat.completions.create(
             model=settings.openai_model,
             messages=[
                 {"role": "system", "content": CONVERSATION_PROMPT},
@@ -120,32 +128,3 @@ def converse_with_openai(state: IntakeState) -> dict[str, Any] | None:
         return data
     except Exception:
         return None
-
-
-def _map_extraction(payload: dict[str, Any]) -> dict[str, str]:
-    slots: dict[str, str] = {}
-
-    if _clean(payload.get("employer")):
-        slots["employer"] = _clean(payload.get("employer"))
-    if _clean(payload.get("employment_duration")):
-        slots["employment_duration"] = _clean(payload.get("employment_duration"))
-    if _clean(payload.get("procedural_stage")):
-        slots["procedural_stage"] = _clean(payload.get("procedural_stage"))
-    if _clean(payload.get("employment_status")):
-        slots["employment_status"] = _clean(payload.get("employment_status"))
-    if _clean(payload.get("documentation")):
-        slots["documentation"] = _clean(payload.get("documentation"))
-    if _clean(payload.get("urgency")):
-        slots["urgency"] = _clean(payload.get("urgency"))
-    if _clean(payload.get("signed_docs")):
-        slots["signed_docs"] = _clean(payload.get("signed_docs"))
-    if _clean(payload.get("contact")):
-        slots["contact"] = _clean(payload.get("contact"))
-
-    return slots
-
-
-def _clean(value: Any) -> str:
-    if value is None:
-        return ""
-    return str(value).strip()

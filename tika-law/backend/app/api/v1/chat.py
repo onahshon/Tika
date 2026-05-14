@@ -8,7 +8,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 @router.post("/message", response_model=ChatMessageResponse)
-def create_chat_message(
+async def create_chat_message(
     request: ChatMessageRequest,
     attorney_id: str = Depends(require_attorney_id),
 ) -> ChatMessageResponse:
@@ -18,4 +18,4 @@ def create_chat_message(
             detail="attorney_id must match X-Attorney-Id.",
         )
 
-    return handle_chat_message(request)
+    return await handle_chat_message(request)
