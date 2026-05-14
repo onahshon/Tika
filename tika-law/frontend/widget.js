@@ -4,19 +4,25 @@
 
   /* ── SVG icons ─────────────────────────────────────────────────────────── */
   var SVG_SCALE =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
-    'stroke-linecap="round" stroke-linejoin="round" width="18" height="18">' +
-    '<line x1="12" y1="2" x2="12" y2="20"/>' +
-    '<line x1="9" y1="20" x2="15" y2="20"/>' +
-    '<line x1="3" y1="6" x2="21" y2="6"/>' +
-    '<line x1="3" y1="6" x2="3" y2="12"/>' +
-    '<path d="M1 12 Q3 14.5 5 12"/>' +
-    '<line x1="21" y1="6" x2="21" y2="12"/>' +
-    '<path d="M19 12 Q21 14.5 23 12"/>' +
+    '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" xmlns="http://www.w3.org/2000/svg">' +
+    /* base */
+    '<ellipse cx="12" cy="22" rx="5" ry="1.5"/>' +
+    /* pillar */
+    '<rect x="11" y="5.5" width="2" height="16" rx="0.5"/>' +
+    /* beam */
+    '<rect x="2" y="3.5" width="20" height="2.5" rx="1.25"/>' +
+    /* left V-chains */
+    '<polygon points="3.5,6 1,14 7,14"/>' +
+    /* left pan bowl */
+    '<path d="M1 14 A3 2 0 0 1 7 14 Z"/>' +
+    /* right V-chains */
+    '<polygon points="20.5,6 17,14 23,14"/>' +
+    /* right pan bowl */
+    '<path d="M17 14 A3 2 0 0 1 23 14 Z"/>' +
     '</svg>';
 
   var SVG_PLANE =
-    '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">' +
+    '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="transform:rotate(180deg)">' +
     '<path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>' +
     '</svg>';
 
