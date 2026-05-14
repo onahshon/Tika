@@ -61,6 +61,7 @@
       /* Header */
       ".tika-law-header{display:flex;align-items:center;padding:16px 18px;" +
         "background:var(--tika-panel-bg);border-bottom:1px solid var(--tika-border)}" +
+      ".tika-law-header-icon{width:38px;height:38px;border-radius:50%;background:var(--tika-primary-dark);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-inline-end:10px}" +
       ".tika-law-header-info{display:flex;flex-direction:column;gap:2px}" +
       ".tika-law-title{margin:0;font-size:15px;font-weight:700;color:var(--tika-text-primary)}" +
       ".tika-law-subtitle{margin:0;font-size:12px;color:var(--tika-text-secondary);display:flex;align-items:center;gap:5px}" +
@@ -72,12 +73,14 @@
 
       /* Messages area */
       ".tika-law-messages{flex:1;overflow:auto;padding:20px 16px;" +
-        "display:flex;flex-direction:column;gap:6px;background:var(--tika-page-bg)}" +
+        "display:flex;flex-direction:column;gap:6px;background:var(--tika-panel-bg)}" +
 
       /* Rows — no avatars, just bubbles aligned by side */
       ".tika-law-row{display:flex;flex-direction:column;animation:tika-pop .2s ease}" +
-      ".tika-law-row.is-bot .tika-law-bubble{align-self:flex-end;border-bottom-right-radius:4px}" +
-      ".tika-law-row.is-user .tika-law-bubble{align-self:flex-start;border-bottom-left-radius:4px}" +
+      /* RTL: bot sits on the right → tail points left (flat bottom-left corner) */
+      ".tika-law-row.is-bot .tika-law-bubble{align-self:flex-end;border-bottom-left-radius:4px}" +
+      /* RTL: user sits on the left → tail points right (flat bottom-right corner) */
+      ".tika-law-row.is-user .tika-law-bubble{align-self:flex-start;border-bottom-right-radius:4px}" +
 
       /* Bubbles */
       ".tika-law-bubble{max-width:80%;padding:11px 15px;border-radius:18px;" +
@@ -98,12 +101,12 @@
       "@keyframes tika-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}" +
 
       /* Disclaimer */
-      ".tika-law-disclaimer{padding:7px 14px;background:var(--tika-panel-bg);" +
+      ".tika-law-disclaimer{padding:7px 14px;background:var(--tika-page-bg);" +
         "border-top:1px solid var(--tika-border);color:var(--tika-text-muted);font-size:11px;text-align:center}" +
 
       /* Composer */
       ".tika-law-composer{display:flex;gap:10px;align-items:flex-end;padding:12px 14px;" +
-        "background:var(--tika-panel-bg);border-top:1px solid var(--tika-border)}" +
+        "background:var(--tika-page-bg);border-top:1px solid var(--tika-border)}" +
       ".tika-law-input{flex:1;min-width:0;border:1.5px solid var(--tika-input-border);" +
         "border-radius:14px;padding:12px 16px;font:14px Arial,sans-serif;outline:none;" +
         "background:var(--tika-panel-bg);color:var(--tika-text-primary);line-height:1.4}" +
@@ -201,6 +204,8 @@
 
     /* Header */
     var header = createElement("header", "tika-law-header");
+    var headerIcon = createElement("div", "tika-law-header-icon");
+    headerIcon.innerHTML = SVG_SCALE;
     var headerInfo = createElement("div", "tika-law-header-info");
     var title = createElement("h2", "tika-law-title", "Tika Law");
     var subtitle = createElement("p", "tika-law-subtitle");
@@ -211,6 +216,7 @@
     headerInfo.appendChild(subtitle);
     var closeButton = createElement("button", "tika-law-close", "×");
     closeButton.type = "button";
+    header.appendChild(headerIcon);
     header.appendChild(headerInfo);
     header.appendChild(closeButton);
 
