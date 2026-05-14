@@ -137,19 +137,21 @@ async def converse_with_openai(state: IntakeState) -> dict[str, Any] | None:
     if not settings.openai_api_key:
         return None
 
-    payload = {
-        "conversation": state.history[-12:],
-        "known_slots": state.slots,
-        "turn_count": state.turn_count,
-    }
+    system_content = CONVERSATION_PROMPT
+    if state.slots:
+        known = "\n".join(f"- {k}: {v}" for k, v in state.slots.items() if v)
+        if known:
+            system_content += (
+                f"\n\nInformation already collected — do not re-ask:\n{known}"
+            )
+
+    messages: list[dict[str, str]] = [{"role": "system", "content": system_content}]
+    messages.extend(state.history[-12:])
 
     try:
         response = await _get_client().chat.completions.create(
             model=settings.openai_model,
-            messages=[
-                {"role": "system", "content": CONVERSATION_PROMPT},
-                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-            ],
+            messages=messages,
             response_format={"type": "json_object"},
             temperature=0.5,
         )
