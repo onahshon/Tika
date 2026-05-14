@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 import resend
 
@@ -32,14 +33,22 @@ def notify_attorney(
 
     body = "\n".join(contact_lines) + ("\n\n---\n\n" + transcript if transcript else "")
 
+    logger.info(
+        "notify_attorney: sending from=%s to=%s attorney_id=%s",
+        settings.resend_from,
+        config["email"],
+        attorney_id,
+    )
     try:
-        resend.Emails.send({
+        result = resend.Emails.send({
             "from": settings.resend_from,
             "to": [config["email"]],
             "subject": f"Tika Law — ליד חדש: {name}",
             "text": body,
         })
+        email_id = result.get("id") if isinstance(result, dict) else getattr(result, "id", result)
+        logger.info("notify_attorney: sent ok id=%s", email_id)
         return True
-    except Exception as e:
-        logger.error("notify_attorney Resend error: %s", e)
+    except Exception:
+        logger.error("notify_attorney Resend error:\n%s", traceback.format_exc())
         return False
