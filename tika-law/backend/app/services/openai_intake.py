@@ -4,7 +4,7 @@ from typing import Any
 from openai import OpenAI
 
 from backend.app.core.config import settings
-from backend.app.services.intake_engine import PhraseContext
+from backend.app.services.intake_engine import IntakeState, PhraseContext
 
 EXTRACTION_PROMPT = """
 You are extracting facts from a Hebrew employment-law intake conversation.
@@ -26,6 +26,25 @@ Fields to extract:
 - signed_documents: one of signed, not_signed, requested, unclear, or null
 
 Return only JSON.
+"""
+
+CASE_ASSESSMENT_PROMPT = """
+You are an intake coordinator at an Israeli employment-law firm.
+A potential client just asked whether they have a case.
+
+Based on the known facts and conversation history, give a brief honest preliminary assessment in Hebrew.
+
+Guidelines:
+- Very short tenure (days or 1-2 weeks): in Israel this is the probationary period — fewer protections, weaker case. Say so honestly but gently.
+- Hearing scheduled: an active situation — worth consulting, but outcome depends on details
+- Already terminated: check whether process was fair
+- If little is known: say you need a bit more info before assessing
+- Never promise outcomes or give legal guarantees
+- Be honest, concise — 2-3 short sentences maximum
+- End by asking for their phone number so the attorney can evaluate properly
+- Professional but human tone — this is a real person's livelihood
+
+Return only JSON: {"assistant_message": "..."}
 """
 
 PHRASING_PROMPT = """
@@ -116,6 +135,38 @@ def phrase_with_openai(context: PhraseContext) -> str | None:
         return None
 
     if not message or len(message) > 220:
+        return None
+
+    return message
+
+
+def assess_case_with_openai(state: IntakeState) -> str | None:
+    if not settings.openai_api_key:
+        return None
+
+    payload = {
+        "known_slots": state.slots,
+        "conversation_history": state.history[-10:],
+        "turn_count": state.turn_count,
+    }
+
+    try:
+        client = OpenAI(api_key=settings.openai_api_key)
+        response = client.chat.completions.create(
+            model=settings.openai_model,
+            messages=[
+                {"role": "system", "content": CASE_ASSESSMENT_PROMPT},
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.4,
+        )
+        data = json.loads(response.choices[0].message.content or "{}")
+        message = str(data.get("assistant_message", "")).strip()
+    except Exception:
+        return None
+
+    if not message or len(message) > 350:
         return None
 
     return message

@@ -6,9 +6,11 @@ from backend.app.services.intake_engine import (
     IntakeState,
     advance_intake,
     build_summary,
+    classify_state,
+    score_state,
 )
 from backend.app.services.notifications import notify_attorney
-from backend.app.services.openai_intake import extract_with_openai, phrase_with_openai
+from backend.app.services.openai_intake import assess_case_with_openai, extract_with_openai, phrase_with_openai
 
 CONVERSATIONS: dict[str, IntakeState] = {}
 NOTIFIED_CONVERSATIONS: set[str] = set()
@@ -24,6 +26,8 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
     intent = classify_intent(request.message, state)
     if intent in {"greeting", "irrelevant_nonsense", "contact_detail", "request_human", "stop_exit"}:
         return _handle_pre_intake_intent(conversation_id, state, request.message, intent)
+    if intent == "case_inquiry":
+        return _handle_case_inquiry(conversation_id, state, request.message)
 
     last_question = _last_assistant_message(state)
     extracted_slots = (
@@ -69,6 +73,13 @@ def classify_intent(message: str, state: IntakeState) -> str:
 
     if lowered in {"היי", "שלום", "הלו", "בוקר טוב", "ערב טוב", "צהריים טובים", "hi", "hello"}:
         return "greeting"
+
+    if any(phrase in lowered for phrase in (
+        "יש לי קייס", "יש לי תיק", "יש לי כאן", "יש לי זכויות",
+        "כדאי לי", "האם כדאי", "שווה לי", "מה הסיכויים",
+        "האם יש לי", "מה זכויותי", "האם יש לי עילה", "האם יש מה",
+    )):
+        return "case_inquiry"
 
     if any(term in lowered for term in ("בן אדם", "נציג", "עורך דין", "עו\"ד", "תחזרו אלי", "תתקשרו")):
         return "request_human"
@@ -153,6 +164,46 @@ def _handle_pre_intake_intent(
         notification_sent=False,
         suggested_next_questions=[],
     )
+
+
+def _handle_case_inquiry(
+    conversation_id: str,
+    state: IntakeState,
+    message: str,
+) -> ChatMessageResponse:
+    state.turn_count += 1
+    state.history.append({"role": "user", "content": message})
+
+    assistant_message = assess_case_with_openai(state) or _default_case_assessment(state)
+    state.last_asked_slot = "contact"
+    state.history.append({"role": "assistant", "content": assistant_message})
+
+    score = score_state(state)
+    classification = classify_state(state, score)
+
+    return ChatMessageResponse(
+        conversation_id=conversation_id,
+        assistant_message=assistant_message,
+        classification=classification,
+        score=score,
+        lead_captured=False,
+        notification_sent=False,
+        suggested_next_questions=[],
+    )
+
+
+def _default_case_assessment(state: IntakeState) -> str:
+    duration = state.slots.get("employment_duration", "")
+    stage = state.slots.get("procedural_stage", "")
+    short_tenure = any(term in duration for term in ("שבוע", "ימים", "יום"))
+
+    if short_tenure:
+        return "עם תקופת עבודה קצרה כל כך, ההגנות בדרך כלל מוגבלות. כדאי שעו״ד יבדוק את הפרטים לפני שמסיקים מסקנות. תשאיר/י מספר טלפון?"
+    if stage == "hearing_scheduled":
+        return "שימוע הוא שלב קריטי — כדאי להתייעץ לפני שנכנסים אליו. תשאיר/י מספר טלפון ועורכת הדין תחזור אליך."
+    if not state.slots:
+        return "כדי לענות על זה אני צריכה קצת יותר מידע. מה קרה בעבודה?"
+    return "צריך לבדוק את הפרטים. תשאיר/י מספר טלפון ועורכת הדין תעריך."
 
 
 def _has_legal_context(lowered: str) -> bool:
