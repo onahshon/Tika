@@ -10,4 +10,16 @@ class ChatMessageRequest(BaseModel):
 class ChatMessageResponse(BaseModel):
     conversation_id: str
     assistant_message: str
-    notification_sent: bool
+    show_contact_form: bool = False
+
+
+class ContactSubmitRequest(BaseModel):
+    attorney_id: str = Field(min_length=1)
+    conversation_id: str = Field(min_length=1)
+    name: str = Field(min_length=1, max_length=120)
+    phone: str = Field(min_length=1, max_length=40)
+    email: str | None = Field(default=None, max_length=200)
+
+
+class ContactSubmitResponse(BaseModel):
+    success: bool

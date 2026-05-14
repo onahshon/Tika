@@ -91,6 +91,19 @@
       /* Pop-in animation */
       "@keyframes tika-pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}" +
 
+      /* Contact form card */
+      ".tika-law-contact-card{background:var(--tika-panel-bg);border:1.5px solid var(--tika-border);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;animation:tika-pop .22s ease}" +
+      ".tika-law-contact-heading{margin:0;font-size:13px;font-weight:600;color:var(--tika-text-primary)}" +
+      ".tika-law-contact-field{display:flex;flex-direction:column;gap:5px}" +
+      ".tika-law-contact-label{font-size:12px;font-weight:500;color:var(--tika-text-secondary)}" +
+      ".tika-law-contact-inp{border:1.5px solid var(--tika-input-border);border-radius:10px;padding:9px 13px;font:14px Arial,sans-serif;outline:none;color:var(--tika-text-primary);background:var(--tika-panel-bg);width:100%;box-sizing:border-box;direction:rtl}" +
+      ".tika-law-contact-inp:focus{border-color:var(--tika-primary);box-shadow:0 0 0 3px rgba(37,99,235,.10)}" +
+      ".tika-law-contact-inp.error{border-color:#EF4444}" +
+      ".tika-law-contact-submit{background:var(--tika-primary);color:#fff;border:0;border-radius:10px;padding:11px 16px;font:600 14px Arial,sans-serif;cursor:pointer;transition:background .15s;width:100%}" +
+      ".tika-law-contact-submit:hover:not(:disabled){background:var(--tika-primary-hover)}" +
+      ".tika-law-contact-submit:disabled{opacity:.55;cursor:wait}" +
+      ".tika-law-contact-success{text-align:center;color:var(--tika-text-secondary);font-size:14px;padding:6px 0;line-height:1.5}" +
+
       /* Typing indicator */
       ".tika-law-typing{display:flex;gap:5px;align-items:center;padding:11px 15px;" +
         "background:var(--tika-bot-bubble);border-radius:18px;border-bottom-right-radius:4px;align-self:flex-end}" +
@@ -150,6 +163,84 @@
     Object.keys(theme).forEach(function (key) {
       var prop = THEME_MAP[key];
       if (prop) root.style.setProperty(prop, theme[key]);
+    });
+  }
+
+  /* ── Contact form ───────────────────────────────────────────────────────── */
+  function makeField(labelText, inputType, placeholder) {
+    var wrapper = createElement("div", "tika-law-contact-field");
+    var label = createElement("label", "tika-law-contact-label", labelText);
+    var inp = createElement("input", "tika-law-contact-inp");
+    inp.type = inputType;
+    inp.placeholder = placeholder;
+    wrapper.appendChild(label);
+    wrapper.appendChild(inp);
+    return { wrapper: wrapper, input: inp };
+  }
+
+  function appendContactForm(messages, getConversationId, apiBaseUrl, attorneyId) {
+    var card = createElement("div", "tika-law-contact-card");
+    var heading = createElement("p", "tika-law-contact-heading", "השאירו פרטים ועורך דין יחזור אליכם:");
+    var nameF  = makeField("שם מלא *",            "text",  "ישראל ישראלי");
+    var phoneF = makeField("טלפון *",              "tel",   "05X-XXXXXXX");
+    var emailF = makeField("אימייל (אופציונלי)", "email", "mail@example.com");
+    var submit = createElement("button", "tika-law-contact-submit", "שלחו פרטים");
+    submit.type = "button";
+
+    card.appendChild(heading);
+    card.appendChild(nameF.wrapper);
+    card.appendChild(phoneF.wrapper);
+    card.appendChild(emailF.wrapper);
+    card.appendChild(submit);
+
+    var row = createElement("div", "tika-law-row is-bot");
+    row.appendChild(card);
+    messages.appendChild(row);
+    messages.scrollTop = messages.scrollHeight;
+
+    submit.addEventListener("click", function () {
+      var name  = nameF.input.value.trim();
+      var phone = phoneF.input.value.trim();
+      var email = emailF.input.value.trim();
+
+      nameF.input.classList.toggle("error", !name);
+      phoneF.input.classList.toggle("error", !phone);
+      if (!name || !phone) return;
+
+      submit.disabled = true;
+      submit.textContent = "שולח...";
+
+      fetch(apiBaseUrl.replace(/\/$/, "") + "/api/v1/chat/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Attorney-Id": attorneyId,
+        },
+        body: JSON.stringify({
+          attorney_id: attorneyId,
+          conversation_id: getConversationId(),
+          name: name,
+          phone: phone,
+          email: email || null,
+        }),
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          card.innerHTML = "";
+          var msg = data.success
+            ? "✓ פרטיך התקבלו. עורך דין יחזור אליך בהקדם."
+            : "הייתה בעיה בשליחה. אפשר לנסות שוב.";
+          card.appendChild(createElement("p", "tika-law-contact-success", msg));
+          if (!data.success) {
+            submit.disabled = false;
+            submit.textContent = "שלחו פרטים";
+            card.appendChild(submit);
+          }
+        })
+        .catch(function () {
+          submit.disabled = false;
+          submit.textContent = "שלחו פרטים";
+        });
     });
   }
 
@@ -287,6 +378,9 @@
           hideTyping(typingRow);
           conversationId = data.conversation_id;
           appendMessage(messages, "bot", data.assistant_message);
+          if (data.show_contact_form) {
+            appendContactForm(messages, function () { return conversationId; }, config.apiBaseUrl, config.attorneyId);
+          }
         })
         .catch(function (err) {
           hideTyping(typingRow);
