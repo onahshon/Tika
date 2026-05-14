@@ -10,6 +10,7 @@ from backend.app.schemas.chat import (
 from backend.app.services.notifications import notify_attorney
 from backend.app.services.openai_intake import converse_with_openai
 
+
 _CONVERSATIONS: dict[str, dict] = {}
 _TIMESTAMPS: dict[str, float] = {}
 _TTL = 2 * 60 * 60  # 2 hours
@@ -82,20 +83,17 @@ async def submit_contact(
     if not state or state["finalized"]:
         return ContactSubmitResponse(success=False)
 
-    contact_lines = [f"שם: {name}", f"טלפון: {phone}"]
-    if email:
-        contact_lines.append(f"אימייל: {email}")
-
     transcript = "\n".join(
         f"{m['role'].capitalize()}: {m['content']}" for m in state["history"]
     )
 
-    body = "\n".join(contact_lines) + "\n\n---\n\n" + transcript
-
     sent = await asyncio.to_thread(
         notify_attorney,
-        subject=f"Tika Law — ליד חדש: {name}",
-        body=body,
+        attorney_id=state["attorney_id"],
+        name=name,
+        phone=phone,
+        email=email,
+        transcript=transcript,
     )
 
     if sent:
