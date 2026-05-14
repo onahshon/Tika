@@ -1,16 +1,14 @@
 from uuid import uuid4
-import re
 
 from backend.app.schemas.chat import ChatMessageRequest, ChatMessageResponse
 from backend.app.services.intake_engine import (
     IntakeState,
-    advance_intake,
     build_summary,
     classify_state,
     score_state,
 )
 from backend.app.services.notifications import notify_attorney
-from backend.app.services.openai_intake import assess_case_with_openai, extract_with_openai, phrase_with_openai
+from backend.app.services.openai_intake import converse_with_openai
 
 CONVERSATIONS: dict[str, IntakeState] = {}
 NOTIFIED_CONVERSATIONS: set[str] = set()
@@ -23,226 +21,62 @@ def handle_chat_message(request: ChatMessageRequest) -> ChatMessageResponse:
         IntakeState(conversation_id=conversation_id, attorney_id=request.attorney_id),
     )
 
-    intent = classify_intent(request.message, state)
-    if intent in {"greeting", "irrelevant_nonsense", "contact_detail", "request_human", "stop_exit"}:
-        return _handle_pre_intake_intent(conversation_id, state, request.message, intent)
-    if intent == "case_inquiry":
-        return _handle_case_inquiry(conversation_id, state, request.message)
-
-    last_question = _last_assistant_message(state)
-    extracted_slots = (
-        {}
-        if is_gibberish(request.message)
-        else extract_with_openai(
-            request.message,
-            last_asked_slot=state.last_asked_slot,
-            last_question=last_question,
-            history=state.history,
+    if state.finalized:
+        return ChatMessageResponse(
+            conversation_id=conversation_id,
+            assistant_message="כבר העברתי את הפרטים. אם יש עדכון, ניתן להשאיר הודעה.",
+            classification="finalized",
+            score=score_state(state),
+            lead_captured=False,
+            notification_sent=False,
+            suggested_next_questions=[],
         )
-    )
-    decision = advance_intake(
-        state,
-        request.message,
-        external_slots=extracted_slots,
-        phrase_fn=phrase_with_openai,
-    )
 
+    state.turn_count += 1
+    state.history.append({"role": "user", "content": request.message})
+
+    result = converse_with_openai(state)
+
+    if result is None:
+        reply = "מצטערת, יש תקלה זמנית. אפשר לנסות שוב בעוד רגע?"
+        state.history.append({"role": "assistant", "content": reply})
+        return ChatMessageResponse(
+            conversation_id=conversation_id,
+            assistant_message=reply,
+            classification="low_information",
+            score=score_state(state),
+            lead_captured=False,
+            notification_sent=False,
+            suggested_next_questions=[],
+        )
+
+    for key, value in (result.get("extracted_slots") or {}).items():
+        if value and key not in state.slots:
+            state.slots[key] = str(value)
+
+    reply = result["response"]
+    state.history.append({"role": "assistant", "content": reply})
+
+    score = score_state(state)
+    classification = classify_state(state, score)
+    lead_captured = bool(state.slots.get("contact")) and result.get("ready_for_attorney", False)
     notification_sent = False
-    if decision.lead_captured and conversation_id not in NOTIFIED_CONVERSATIONS:
+
+    if lead_captured and conversation_id not in NOTIFIED_CONVERSATIONS:
         notification_sent = notify_attorney(
-            subject=f"Tika Law lead: {decision.classification} ({decision.score}/100)",
+            subject=f"Tika Law lead: {classification} ({score}/100)",
             body=build_summary(state),
         )
         if notification_sent:
             NOTIFIED_CONVERSATIONS.add(conversation_id)
-
-    return ChatMessageResponse(
-        conversation_id=conversation_id,
-        assistant_message=decision.assistant_message,
-        classification=decision.classification,
-        score=decision.score,
-        lead_captured=decision.lead_captured,
-        notification_sent=notification_sent,
-        suggested_next_questions=decision.suggested_next_questions,
-    )
-
-
-def classify_intent(message: str, state: IntakeState) -> str:
-    text = message.strip()
-    lowered = text.lower()
-
-    if lowered in {"היי", "שלום", "הלו", "בוקר טוב", "ערב טוב", "צהריים טובים", "hi", "hello"}:
-        return "greeting"
-
-    if text.endswith("?") and state.slots:
-        return "case_inquiry"
-
-    if any(term in lowered for term in ("בן אדם", "נציג", "עורך דין", "עו\"ד", "תחזרו אלי", "תתקשרו")):
-        return "request_human"
-
-    if lowered in {"ביי", "תודה ביי", "לא משנה", "עזוב", "עזבי", "סגור"}:
-        return "stop_exit"
-
-    if _extract_contact_local(text):
-        return "contact_detail"
-
-    if state.last_asked_slot:
-        return "answer_to_current_intake_question"
-
-    if _has_legal_context(lowered):
-        return "legal_situation_description"
-
-    if is_gibberish(text) or _looks_vague_without_context(lowered):
-        return "irrelevant_nonsense"
-
-    return "irrelevant_nonsense"
-
-
-def is_gibberish(message: str) -> bool:
-    text = message.strip()
-    lowered = text.lower()
-    common_words = {"כן", "לא", "yes", "no", "ok", "okay", "אוקיי"}
-
-    if len(text) < 2:
-        return True
-    if lowered in common_words:
-        return False
-
-    has_hebrew = bool(re.search(r"[\u0590-\u05ff]", text))
-    has_digit = bool(re.search(r"\d", text))
-
-    compact = re.sub(r"\s+", "", lowered)
-    unique_chars = set(compact)
-    if len(compact) >= 3 and len(unique_chars) == 1:
-        return True
-
-    if not has_hebrew and not has_digit and len(unique_chars) <= 2:
-        return True
-
-    return False
-
-
-def _handle_pre_intake_intent(
-    conversation_id: str,
-    state: IntakeState,
-    message: str,
-    intent: str,
-) -> ChatMessageResponse:
-    state.turn_count += 1
-    state.history.append({"role": "user", "content": message})
-
-    if intent == "greeting":
-        assistant_message = "שלום. ספר/י בקצרה מה קרה בעבודה."
-        state.retry_count = 0
-    elif intent == "request_human":
-        assistant_message = "אפשר להשאיר טלפון, ונבדוק חזרה מהמשרד."
-        state.last_asked_slot = "contact"
-    elif intent == "contact_detail":
-        assistant_message = "קיבלתי. כדי להבין אם מתאים להעביר למשרד, מה קרה בעבודה?"
-    elif intent == "stop_exit":
-        assistant_message = "אין בעיה. אם תרצה/י להמשיך, אני כאן."
-        state.finalized = True
-    else:
-        state.retry_count += 1
-        if state.retry_count >= 2:
-            assistant_message = "נראה שאין מספיק מידע לבדיקה ראשונית."
             state.finalized = True
-        else:
-            assistant_message = "לא בטוח שהבנתי. מה קרה בעבודה?"
-
-    state.history.append({"role": "assistant", "content": assistant_message})
-    return ChatMessageResponse(
-        conversation_id=conversation_id,
-        assistant_message=assistant_message,
-        classification="low_information",
-        score=0,
-        lead_captured=False,
-        notification_sent=False,
-        suggested_next_questions=[],
-    )
-
-
-def _handle_case_inquiry(
-    conversation_id: str,
-    state: IntakeState,
-    message: str,
-) -> ChatMessageResponse:
-    state.turn_count += 1
-    state.history.append({"role": "user", "content": message})
-
-    assistant_message = assess_case_with_openai(state) or _default_case_assessment(state)
-    state.last_asked_slot = "contact"
-    state.history.append({"role": "assistant", "content": assistant_message})
-
-    score = score_state(state)
-    classification = classify_state(state, score)
 
     return ChatMessageResponse(
         conversation_id=conversation_id,
-        assistant_message=assistant_message,
+        assistant_message=reply,
         classification=classification,
         score=score,
-        lead_captured=False,
-        notification_sent=False,
+        lead_captured=lead_captured,
+        notification_sent=notification_sent,
         suggested_next_questions=[],
     )
-
-
-def _default_case_assessment(state: IntakeState) -> str:
-    duration = state.slots.get("employment_duration", "")
-    stage = state.slots.get("procedural_stage", "")
-    short_tenure = any(term in duration for term in ("שבוע", "ימים", "יום"))
-
-    if short_tenure:
-        return "עם תקופת עבודה קצרה כל כך, ההגנות בדרך כלל מוגבלות. כדאי שעו״ד יבדוק את הפרטים לפני שמסיקים מסקנות. תשאיר/י מספר טלפון?"
-    if stage == "hearing_scheduled":
-        return "שימוע הוא שלב קריטי — כדאי להתייעץ לפני שנכנסים אליו. תשאיר/י מספר טלפון ועורכת הדין תחזור אליך."
-    if not state.slots:
-        return "כדי לענות על זה אני צריכה קצת יותר מידע. מה קרה בעבודה?"
-    return "צריך לבדוק את הפרטים. תשאיר/י מספר טלפון ועורכת הדין תעריך."
-
-
-def _has_legal_context(lowered: str) -> bool:
-    employment_terms = (
-        "שימוע",
-        "פיטור",
-        "פיטרו",
-        "פוטרתי",
-        "שכר",
-        "משכורת",
-        "מעסיק",
-        "עבודה",
-        "תלוש",
-        "חופשה",
-        "הריון",
-        "מילואים",
-        "אפליה",
-        "הטרדה",
-        "התפטרתי",
-        "הוריד לי",
-        "לא שילמו",
-    )
-    return any(term in lowered for term in employment_terms)
-
-
-def _looks_vague_without_context(lowered: str) -> bool:
-    if lowered in {"כן", "לא", "טוב", "אוקיי", "בסדר", "עובד", "חודשיים"}:
-        return True
-    return len(lowered.split()) <= 2
-
-
-def _extract_contact_local(text: str) -> str | None:
-    phone = re.search(r"05\d[-\s]?\d{7}", text)
-    if phone:
-        return phone.group(0)
-    email = re.search(r"[\w.\-+]+@[\w.\-]+\.\w+", text)
-    if email:
-        return email.group(0)
-    return None
-
-
-def _last_assistant_message(state: IntakeState) -> str | None:
-    for item in reversed(state.history):
-        if item.get("role") == "assistant":
-            return item.get("content")
-    return None
