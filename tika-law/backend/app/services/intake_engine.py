@@ -276,6 +276,8 @@ def classify_state(state: IntakeState, score: int) -> str:
 
 def build_summary(state: IntakeState) -> str:
     labels = {
+        "side": "Side",
+        "issue_type": "Issue type",
         "issue": "Issue",
         "employer": "Employer",
         "employment_duration": "Employment duration",
@@ -286,7 +288,7 @@ def build_summary(state: IntakeState) -> str:
         "signed_docs": "Signed documents",
         CONTACT_SLOT: "Contact",
     }
-    lines = [f"{labels[key]}: {value}" for key, value in state.slots.items() if key in labels]
+    lines = [f"{labels.get(key, key)}: {value}" for key, value in state.slots.items() if value]
     transcript = "\n".join(f"{item['role']}: {item['content']}" for item in state.history[-12:])
     return "\n".join([*lines, "", "Recent conversation:", transcript]).strip()
 
