@@ -74,11 +74,7 @@ def classify_intent(message: str, state: IntakeState) -> str:
     if lowered in {"היי", "שלום", "הלו", "בוקר טוב", "ערב טוב", "צהריים טובים", "hi", "hello"}:
         return "greeting"
 
-    if any(phrase in lowered for phrase in (
-        "יש לי קייס", "יש לי תיק", "יש לי כאן", "יש לי זכויות",
-        "כדאי לי", "האם כדאי", "שווה לי", "מה הסיכויים",
-        "האם יש לי", "מה זכויותי", "האם יש לי עילה", "האם יש מה",
-    )):
+    if text.endswith("?") and state.slots:
         return "case_inquiry"
 
     if any(term in lowered for term in ("בן אדם", "נציג", "עורך דין", "עו\"ד", "תחזרו אלי", "תתקשרו")):
