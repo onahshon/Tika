@@ -36,6 +36,7 @@ async def submit_contact_details(
             detail="attorney_id must match X-Attorney-Id.",
         )
     return await submit_contact(
+        request.attorney_id,
         request.conversation_id,
         request.name,
         request.phone,

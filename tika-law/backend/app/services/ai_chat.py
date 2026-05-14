@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from uuid import uuid4
 
@@ -9,6 +10,8 @@ from backend.app.schemas.chat import (
 )
 from backend.app.services.notifications import notify_attorney
 from backend.app.services.openai_intake import converse_with_openai
+
+logger = logging.getLogger(__name__)
 
 
 _CONVERSATIONS: dict[str, dict] = {}
@@ -73,6 +76,7 @@ async def handle_chat_message(request: ChatMessageRequest) -> ChatMessageRespons
 
 
 async def submit_contact(
+    attorney_id: str,
     conversation_id: str,
     name: str,
     phone: str,
@@ -80,23 +84,25 @@ async def submit_contact(
 ) -> ContactSubmitResponse:
     state = _CONVERSATIONS.get(conversation_id)
 
-    if not state or state["finalized"]:
+    if state and state["finalized"]:
         return ContactSubmitResponse(success=False)
 
-    transcript = "\n".join(
-        f"{m['role'].capitalize()}: {m['content']}" for m in state["history"]
+    transcript = (
+        "\n".join(f"{m['role'].capitalize()}: {m['content']}" for m in state["history"])
+        if state
+        else ""
     )
 
     sent = await asyncio.to_thread(
         notify_attorney,
-        attorney_id=state["attorney_id"],
+        attorney_id=attorney_id,
         name=name,
         phone=phone,
         email=email,
         transcript=transcript,
     )
 
-    if sent:
+    if sent and state:
         state["finalized"] = True
 
     return ContactSubmitResponse(success=sent)
