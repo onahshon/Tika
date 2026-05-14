@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"
 
+    resend_api_key: str | None = None
+    resend_from: str = "Tika Law <onboarding@resend.dev>"
+
     @property
     def backend_cors_origins(self) -> list[str]:
         return [
