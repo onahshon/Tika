@@ -55,6 +55,7 @@
     style.textContent =
       ".tika-law-root{" +
         "--tika-primary:#0077E6;--tika-primary-hover:#0068CC;" +
+        "--tika-scale-bg:#5b21b6;--tika-scale-bg-hover:#4c1d95;" +
         "--tika-widget-bg:#FFFFFF;--tika-page-bg:#F5F7FA;--tika-border:#E1E7F0;" +
         "--tika-text-primary:#0F172A;--tika-text-secondary:#64748B;--tika-text-muted:#94A3B8;" +
         "--tika-bot-bubble-bg:#EAF3FF;--tika-bot-bubble-text:#1E293B;" +
@@ -62,8 +63,8 @@
         "--tika-input-border:#DCE4EE;" +
       "}" +
 
-      ".tika-law-launcher{position:fixed;right:24px;bottom:24px;z-index:2147483000;width:60px;height:60px;border:0;border-radius:50%;background:var(--tika-primary);color:#fff;box-shadow:0 4px 20px rgba(0,119,230,.30);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}" +
-      ".tika-law-launcher:hover{background:var(--tika-primary-hover)}" +
+      ".tika-law-launcher{position:fixed;right:24px;bottom:24px;z-index:2147483000;width:60px;height:60px;border:0;border-radius:50%;background:var(--tika-scale-bg);color:#fff;box-shadow:0 4px 20px rgba(91,33,182,.35);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}" +
+      ".tika-law-launcher:hover{background:var(--tika-scale-bg-hover)}" +
 
       ".tika-law-panel{position:fixed;right:24px;bottom:96px;z-index:2147483000;width:min(380px,calc(100vw - 32px));height:min(620px,calc(100vh - 120px));display:none;flex-direction:column;overflow:hidden;border-radius:16px;background:var(--tika-widget-bg);border:1px solid var(--tika-border);box-shadow:0 8px 36px rgba(15,23,42,.10);font-family:Arial,'Noto Sans Hebrew',sans-serif;color:var(--tika-text-primary);direction:rtl}" +
       ".tika-law-panel.is-open{display:flex}" +
@@ -78,8 +79,8 @@
       ".tika-law-messages{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--tika-widget-bg)}" +
 
       ".tika-law-avatar{width:32px;height:32px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center}" +
-      ".tika-law-avatar-bot{background:var(--tika-primary);color:#fff}" +
-      ".tika-law-avatar-user{background:var(--tika-page-bg);color:var(--tika-text-secondary)}" +
+      ".tika-law-avatar-bot{background:var(--tika-scale-bg);color:#fff}" +
+      ".tika-law-avatar-user{background:var(--tika-primary);color:#fff}" +
 
       ".tika-law-row{display:flex;gap:8px;align-items:flex-end}" +
       ".tika-law-row.is-user{flex-direction:row-reverse}" +
