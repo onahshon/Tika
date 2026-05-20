@@ -133,15 +133,19 @@
 
       /* Mobile */
       "@media(max-width:640px){" +
-        ".tika-law-panel{" +
-          "top:0!important;left:0!important;right:auto!important;bottom:auto!important;" +
-          "width:100vw!important;max-width:none!important;" +
-          "height:100vh!important;height:100dvh!important;" +
-          "border-radius:0!important;border:0!important}" +
-        ".tika-law-messages{overflow-y:scroll;-webkit-overflow-scrolling:touch}" +
-        ".tika-law-composer{flex-shrink:0;padding-bottom:max(12px,env(safe-area-inset-bottom))}" +
-        ".tika-law-launcher{right:16px;bottom:16px}" +
-        ".tika-law-panel.is-open~.tika-law-launcher{display:none}" +
+        ".tika-law-panel," +
+        ".tika-law-panel.is-open{" +
+          "position:fixed!important;" +
+          "top:0!important;right:0!important;bottom:0!important;left:0!important;" +
+          "width:100vw!important;max-width:100vw!important;" +
+          "height:100dvh!important;max-height:100dvh!important;min-height:100dvh!important;" +
+          "border-radius:0!important;" +
+          "margin:0!important;" +
+          "border:none!important;" +
+          "box-shadow:none!important}" +
+        ".tika-law-root{width:100vw;overflow-x:hidden}" +
+        ".tika-law-panel.is-open~.tika-law-launcher," +
+        ".tika-law-launcher.is-hidden-mobile{display:none!important}" +
       "}";
 
     document.head.appendChild(style);
