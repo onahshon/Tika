@@ -132,12 +132,11 @@
       ".tika-law-send:disabled{opacity:.5;cursor:wait}" +
 
       /* Mobile */
-      "@media(max-width:520px){" +
-        ".tika-law-panel{right:0;bottom:0;width:100vw;" +
-          "height:100vh;height:100svh;height:100dvh;" +
-          "border-radius:0;border:0;box-sizing:border-box;" +
-          "padding-bottom:env(safe-area-inset-bottom)}" +
-        ".tika-law-launcher{right:16px;bottom:calc(16px + env(safe-area-inset-bottom))}" +
+      "@media(max-width:640px){" +
+        ".tika-law-panel{top:0;right:0;bottom:0;left:0;width:auto;height:auto;border-radius:0;border:0}" +
+        ".tika-law-messages{overflow-y:scroll;-webkit-overflow-scrolling:touch}" +
+        ".tika-law-composer{flex-shrink:0;padding-bottom:max(12px,env(safe-area-inset-bottom))}" +
+        ".tika-law-launcher{right:16px;bottom:16px}" +
         ".tika-law-panel.is-open~.tika-law-launcher{display:none}" +
       "}";
 
