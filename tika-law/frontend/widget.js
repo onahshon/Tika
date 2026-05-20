@@ -133,7 +133,10 @@
 
       /* Mobile */
       "@media(max-width:640px){" +
-        ".tika-law-panel{top:0;right:0;bottom:0;left:0;width:auto;height:auto;border-radius:0;border:0}" +
+        ".tika-law-panel{" +
+          "top:0!important;right:0!important;bottom:0!important;left:0!important;" +
+          "width:100%!important;max-width:none!important;height:100%!important;" +
+          "border-radius:0!important;border:0!important}" +
         ".tika-law-messages{overflow-y:scroll;-webkit-overflow-scrolling:touch}" +
         ".tika-law-composer{flex-shrink:0;padding-bottom:max(12px,env(safe-area-inset-bottom))}" +
         ".tika-law-launcher{right:16px;bottom:16px}" +
