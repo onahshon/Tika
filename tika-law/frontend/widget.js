@@ -72,8 +72,8 @@
       ".tika-law-close:hover{background:var(--tika-page-bg)}" +
 
       /* Messages area */
-      ".tika-law-messages{flex:1;min-height:0;overflow:auto;padding:20px 16px;" +
-        "display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:var(--tika-panel-bg)}" +
+      ".tika-law-messages{flex:1;min-height:0;overflow-y:auto;padding:20px 16px;" +
+        "display:flex;flex-direction:column;gap:6px;background:var(--tika-panel-bg)}" +
 
       /* Rows — no avatars, just bubbles aligned by side */
       ".tika-law-row{display:flex;flex-direction:column;animation:tika-pop .2s ease}" +
