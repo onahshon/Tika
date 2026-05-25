@@ -137,8 +137,8 @@
         ".tika-law-panel.is-open{" +
           "position:fixed!important;" +
           "top:0!important;right:0!important;bottom:0!important;left:0!important;" +
-          "width:100vw!important;max-width:100vw!important;" +
-          "height:100dvh!important;max-height:100dvh!important;min-height:100dvh!important;" +
+          "width:auto!important;max-width:none!important;" +
+          "height:auto!important;max-height:none!important;min-height:unset!important;" +
           "border-radius:0!important;" +
           "margin:0!important;" +
           "border:none!important;" +
