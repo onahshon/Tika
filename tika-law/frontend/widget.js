@@ -72,11 +72,11 @@
       ".tika-law-close:hover{background:var(--tika-page-bg)}" +
 
       /* Messages area */
-      ".tika-law-messages{flex:1;min-height:0;overflow-y:auto;padding:20px 16px;" +
+      ".tika-law-messages{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:20px 16px;" +
         "display:flex;flex-direction:column;gap:6px;background:var(--tika-panel-bg)}" +
 
       /* Rows — no avatars, just bubbles aligned by side */
-      ".tika-law-row{display:flex;flex-direction:column;animation:tika-pop .2s ease}" +
+      ".tika-law-row{display:flex;flex-direction:column;min-width:0;animation:tika-pop .2s ease}" +
       /* RTL: bot sits on the right → tail points left (flat bottom-left corner) */
       ".tika-law-row.is-bot .tika-law-bubble{align-self:flex-end;border-bottom-left-radius:4px}" +
       /* RTL: user sits on the left → tail points right (flat bottom-right corner) */
@@ -137,12 +137,13 @@
         ".tika-law-panel.is-open{" +
           "position:fixed!important;" +
           "top:0!important;right:0!important;bottom:0!important;left:0!important;" +
-          "width:auto!important;max-width:none!important;" +
+          "width:100dvw!important;max-width:100dvw!important;" +
           "height:auto!important;max-height:none!important;min-height:unset!important;" +
           "border-radius:0!important;" +
           "margin:0!important;" +
           "border:none!important;" +
-          "box-shadow:none!important}" +
+          "box-shadow:none!important;" +
+          "overflow-x:hidden!important}" +
         ".tika-law-root{width:100vw;overflow-x:hidden}" +
         ".tika-law-panel.is-open~.tika-law-launcher," +
         ".tika-law-launcher.is-hidden-mobile{display:none!important}" +
