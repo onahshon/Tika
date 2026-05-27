@@ -96,7 +96,7 @@
       ".tika-law-contact-heading{margin:0;font-size:13px;font-weight:600;color:var(--tika-text-primary)}" +
       ".tika-law-contact-field{display:flex;flex-direction:column;gap:5px}" +
       ".tika-law-contact-label{font-size:12px;font-weight:500;color:var(--tika-text-secondary)}" +
-      ".tika-law-contact-inp{border:1.5px solid var(--tika-input-border);border-radius:10px;padding:9px 13px;font:14px Arial,sans-serif;outline:none;color:var(--tika-text-primary);background:var(--tika-panel-bg);width:100%;box-sizing:border-box;direction:rtl}" +
+      ".tika-law-contact-inp{border:1.5px solid var(--tika-input-border);border-radius:10px;padding:9px 13px;font:16px Arial,sans-serif;outline:none;color:var(--tika-text-primary);background:var(--tika-panel-bg);width:100%;box-sizing:border-box;direction:rtl}" +
       ".tika-law-contact-inp:focus{border-color:var(--tika-primary);box-shadow:0 0 0 3px rgba(37,99,235,.10)}" +
       ".tika-law-contact-inp.error{border-color:#EF4444}" +
       ".tika-law-contact-submit{background:var(--tika-primary);color:#fff;border:0;border-radius:10px;padding:11px 16px;font:600 14px Arial,sans-serif;cursor:pointer;transition:background .15s;width:100%}" +
@@ -121,7 +121,7 @@
       ".tika-law-composer{display:flex;gap:10px;align-items:flex-end;padding:12px 14px;" +
         "background:var(--tika-page-bg);border-top:1px solid var(--tika-border)}" +
       ".tika-law-input{flex:1;min-width:0;border:1.5px solid var(--tika-input-border);" +
-        "border-radius:14px;padding:12px 16px;font:14px Arial,sans-serif;outline:none;" +
+        "border-radius:14px;padding:12px 16px;font:16px Arial,sans-serif;outline:none;" +
         "background:var(--tika-panel-bg);color:var(--tika-text-primary);line-height:1.4}" +
       ".tika-law-input::placeholder{color:var(--tika-text-muted)}" +
       ".tika-law-input:focus{border-color:var(--tika-primary);box-shadow:0 0 0 3px rgba(37,99,235,.10)}" +
