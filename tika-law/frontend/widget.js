@@ -1,15 +1,13 @@
 (function () {
 
   /* ── SVG icons ─────────────────────────────────────────────────────────── */
-  var SVG_SCALE =
+  var SVG_BOT =
     '<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">' +
-    '<ellipse cx="12" cy="22" rx="5" ry="1.5"/>' +
-    '<rect x="11" y="5.5" width="2" height="16" rx="0.5"/>' +
-    '<rect x="2" y="3.5" width="20" height="2.5" rx="1.25"/>' +
-    '<polygon points="3.5,6 1,14 7,14"/>' +
-    '<path d="M1 14 A3 2 0 0 1 7 14 Z"/>' +
-    '<polygon points="20.5,6 17,14 23,14"/>' +
-    '<path d="M17 14 A3 2 0 0 1 23 14 Z"/>' +
+    '<path fill-rule="evenodd" d="' +
+    'M12 2a1 1 0 0 0-1 1v1H8a4 4 0 0 0-4 4v8a4 4 0 0 0 4 4h8a4 4 0 0 0 4-4V8a4 4 0 0 0-4-4h-3V3a1 1 0 0 0-1-1z' +
+    'M7.5 11.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0z' +
+    'M13.5 11.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0z' +
+    '"/>' +
     '</svg>';
 
   var SVG_PLANE =
@@ -300,7 +298,7 @@
     /* Launcher */
     var launcher = createElement("button", "tika-law-launcher");
     launcher.type = "button";
-    launcher.innerHTML = SVG_SCALE;
+    launcher.innerHTML = SVG_BOT;
 
     /* Panel */
     var panel = createElement("section", "tika-law-panel");
@@ -308,7 +306,7 @@
     /* Header */
     var header = createElement("header", "tika-law-header");
     var headerIcon = createElement("div", "tika-law-header-icon");
-    headerIcon.innerHTML = SVG_SCALE;
+    headerIcon.innerHTML = SVG_BOT;
     var headerInfo = createElement("div", "tika-law-header-info");
     var title = createElement("h2", "tika-law-title", "Tika Law");
     var subtitle = createElement("p", "tika-law-subtitle");
@@ -359,6 +357,14 @@
     closeButton.addEventListener("click", function () {
       panel.classList.remove("is-open");
     });
+
+    if (config.autoOpen) {
+      var delay = typeof config.autoOpen === "number" ? config.autoOpen : 2000;
+      setTimeout(function () {
+        panel.classList.add("is-open");
+        input.focus();
+      }, delay);
+    }
 
     composer.addEventListener("submit", function (event) {
       event.preventDefault();
