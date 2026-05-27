@@ -20,15 +20,7 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4.1-mini
-      - key: ATTORNEY_NOTIFICATION_TO
+      - key: RESEND_API_KEY
         sync: false
-      - key: ATTORNEY_NOTIFICATION_FROM
-        sync: false
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        value: 587
-      - key: SMTP_USERNAME
-        sync: false
-      - key: SMTP_PASSWORD
+      - key: RESEND_FROM
         sync: false
