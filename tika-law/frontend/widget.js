@@ -283,9 +283,9 @@
         ? document.querySelector(config.mount)
         : config.mount || document.body;
 
-    if (!mount) throw new Error("Tika Law widget mount element was not found.");
-    if (!config.apiBaseUrl) throw new Error("Tika Law widget requires apiBaseUrl.");
-    if (!config.attorneyId) throw new Error("Tika Law widget requires attorneyId.");
+    if (!mount) throw new Error("Tiqa widget mount element was not found.");
+    if (!config.apiBaseUrl) throw new Error("Tiqa widget requires apiBaseUrl.");
+    if (!config.attorneyId) throw new Error("Tiqa widget requires attorneyId.");
 
     injectStyles();
     if (mount !== document.body) mount.innerHTML = "";
@@ -307,7 +307,7 @@
     var headerIcon = createElement("div", "tika-law-header-icon");
     headerIcon.innerHTML = SVG_BOT;
     var headerInfo = createElement("div", "tika-law-header-info");
-    var title = createElement("h2", "tika-law-title", "Tika Law");
+    var title = createElement("h2", "tika-law-title", "Tiqa");
     var subtitle = createElement("p", "tika-law-subtitle");
     var onlineDot = createElement("span", "tika-law-online");
     subtitle.appendChild(onlineDot);
@@ -346,7 +346,7 @@
     appendMessage(
       messages,
       "bot",
-      "שלום, אני טיקה, העוזרת הדיגיטלית של המשרד.\nאנא תארו בקצרה את עניין דיני העבודה שברצונכם לברר."
+      "שלום, אני Tiqa, העוזרת הדיגיטלית של המשרד.\nאנא תארו בקצרה את עניין דיני העבודה שברצונכם לברר."
     );
 
     launcher.addEventListener("click", function () {

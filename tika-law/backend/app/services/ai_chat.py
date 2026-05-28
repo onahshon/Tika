@@ -19,7 +19,7 @@ _TIMESTAMPS: dict[str, float] = {}
 _TTL = 2 * 60 * 60  # 2 hours
 _TRANSCRIPT_LABELS = {
     "user": "לקוח/ה",
-    "assistant": "טיקה",
+    "assistant": "Tiqa",
 }
 
 

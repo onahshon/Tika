@@ -40,7 +40,7 @@ def notify_attorney(
     payload = {
         "from": settings.resend_from,
         "to": [config["email"]],
-        "subject": f"פנייה חדשה מטיקה: {name}",
+        "subject": f"פנייה חדשה מ-Tiqa: {name}",
         "text": body,
         "html": html_body,
     }
@@ -98,7 +98,7 @@ def _build_html_body(contact_lines: list[str], transcript: str) -> str:
   </head>
   <body dir="rtl" style="margin:0;background:#ffffff;color:#111827;font-family:Arial,'Helvetica Neue',sans-serif;text-align:right;direction:rtl;">
     <main dir="rtl" style="max-width:680px;margin:0 auto;padding:24px;direction:rtl;text-align:right;">
-      <h1 style="font-size:20px;line-height:1.4;margin:0 0 16px;color:#111827;">פנייה חדשה מטיקה</h1>
+      <h1 style="font-size:20px;line-height:1.4;margin:0 0 16px;color:#111827;">פנייה חדשה מ-Tiqa</h1>
       <section dir="rtl" style="font-size:15px;line-height:1.7;margin:0;direction:rtl;text-align:right;">
         {contact_html}
         {transcript_html}
