@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 _CONVERSATIONS: dict[str, dict] = {}
 _TIMESTAMPS: dict[str, float] = {}
 _TTL = 2 * 60 * 60  # 2 hours
+_TRANSCRIPT_LABELS = {
+    "user": "לקוח/ה",
+    "assistant": "טיקה",
+}
 
 
 def _prune_stale() -> None:
@@ -87,11 +91,7 @@ async def submit_contact(
     if state and state["finalized"]:
         return ContactSubmitResponse(success=False)
 
-    transcript = (
-        "\n".join(f"{m['role'].capitalize()}: {m['content']}" for m in state["history"])
-        if state
-        else ""
-    )
+    transcript = _build_transcript(state["history"]) if state else ""
 
     sent = await asyncio.to_thread(
         notify_attorney,
@@ -106,3 +106,12 @@ async def submit_contact(
         state["finalized"] = True
 
     return ContactSubmitResponse(success=sent)
+
+
+def _build_transcript(history: list[dict]) -> str:
+    lines = []
+    for message in history:
+        role = _TRANSCRIPT_LABELS.get(message["role"], message["role"])
+        lines.append(f"{role}: {message['content']}")
+
+    return "\n".join(lines)
