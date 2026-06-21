@@ -353,16 +353,23 @@
       panel.classList.add("is-open");
       input.focus();
     });
+    var storageKey = "tika-closed-" + config.attorneyId;
+
     closeButton.addEventListener("click", function () {
       panel.classList.remove("is-open");
+      try { localStorage.setItem(storageKey, "1"); } catch (e) {}
     });
 
     if (config.autoOpen) {
-      var delay = typeof config.autoOpen === "number" ? config.autoOpen : 2000;
-      setTimeout(function () {
-        panel.classList.add("is-open");
-        input.focus();
-      }, delay);
+      var alreadyClosed = false;
+      try { alreadyClosed = !!localStorage.getItem(storageKey); } catch (e) {}
+      if (!alreadyClosed) {
+        var delay = typeof config.autoOpen === "number" ? config.autoOpen : 2000;
+        setTimeout(function () {
+          panel.classList.add("is-open");
+          input.focus();
+        }, delay);
+      }
     }
 
     composer.addEventListener("submit", function (event) {
