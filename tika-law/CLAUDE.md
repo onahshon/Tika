@@ -4,14 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-From the `tika-law/` directory (this working directory):
+From the `tika-law/` directory:
 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
+pip install -r requirements-dev.txt  # dev/test deps
 
 # Run the API (development)
 uvicorn backend.app.main:app --reload
+
+# Run all tests
+pytest
+
+# Run a single test file
+pytest tests/test_lead_qualification.py
+
+# Run a single test by name
+pytest tests/test_lead_qualification.py -k "test_score_high_quality"
 
 # Run the widget test page (separate terminal, then open http://localhost:5173/test.html)
 cd frontend && py -m http.server 5173
@@ -20,8 +30,6 @@ cd frontend && py -m http.server 5173
 alembic revision --autogenerate -m "description"
 alembic upgrade head
 ```
-
-There are no automated tests — no test runner is configured.
 
 ## Architecture
 
@@ -35,6 +43,8 @@ This is a single-tenant-per-request SaaS backend serving an embeddable Hebrew ch
 5. When `ready_for_attorney=true`, the backend sets `show_contact_form=true` in the response — the widget renders the contact form.
 6. On contact form submission (`POST /api/v1/chat/contact`), `notifications.py` sends a Hebrew RTL email with the transcript via Resend.
 
+**Hybrid AI role:** The backend owns the intake flow (slot tracking, loop prevention, scoring). The LLM shapes the wording of backend-selected questions and extracts structured slot values from natural Hebrew phrasing. The LLM must not choose the next required slot, override stopping conditions, or control lead capture.
+
 **Multi-tenancy:** Attorney identity flows through every request via `X-Attorney-Id`. Attorney configs (name, notification email) are stored in `backend/app/core/attorneys.json` — a static file loaded once at startup. There is no database-backed attorney config yet.
 
 **Conversation persistence:** In-memory only (`_CONVERSATIONS` dict in `ai_chat.py`). PostgreSQL models and Alembic migrations are scaffolded but not yet wired to the chat flow.
@@ -42,6 +52,17 @@ This is a single-tenant-per-request SaaS backend serving an embeddable Hebrew ch
 **AI model:** `gpt-4.1-mini` by default (`OPENAI_MODEL` env var). The system prompt lives in `openai_intake.py` and is the core product logic — it defines triage behavior, slot extraction schema, and Hebrew response style. Do not shorten or restructure it without understanding its triage rules.
 
 **Frontend:** A single vanilla JS widget (`frontend/widget.js`) and `test.html`. The backend serves the frontend as static files at `/widget/*` and exposes `/widget-test` for the test page. No build step — plain JS.
+
+## Lead Scoring & Classification
+
+Logic lives in `services/lead_qualification.py`:
+
+- Base score: 20 points; max: 100
+- High-intent keywords (פיטור, שימוע, שכר, etc.): +25
+- Additional signals (employment status, phone, employer, date, outcome, long description): +5–10 each
+- `high_quality` (≥ 70): referred to attorney
+- `needs_review` (45–69): follow-up questions generated (up to 4)
+- `low_information` (< 45): stored but not referred
 
 ## API Conventions
 
