@@ -1,9 +1,12 @@
 import json
+import logging
 from typing import Any
 
 from openai import AsyncOpenAI
 
 from backend.app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 CONVERSATION_PROMPT = """
 Tika Law Intake is an AI intake assistant for Israeli employment-law attorneys. Its purpose is to
@@ -173,6 +176,12 @@ Salary and tenure as lead quality signals:
   a few thousand NIS from one or two months), a direct written request to the employer or a
   complaint to the enforcement authority is proportionate — not private attorney involvement.
   Redirect accordingly and explain the practical route instead of moving to attorney review.
+- When in doubt between redirecting and referring, prefer to refer. A false positive (referring a
+  borderline case) costs the attorney a short call. A false negative (turning away a valid claim)
+  costs the client their rights. Err on the side of referral.
+- Unpaid wages (overtime, salary, severance, pension) with employment of 1 year or more should
+  almost always be referred to the attorney, even without documentation. Documentation affects
+  the strength of the claim in court, not whether it is worth attorney review.
 
 Triage guidance:
 - Strong: move to attorney review and set ready_for_attorney=true.
@@ -282,4 +291,5 @@ async def converse_with_openai(history: list[dict[str, str]]) -> dict[str, Any] 
             return None
         return data
     except Exception:
+        logger.exception("OpenAI call failed")
         return None
