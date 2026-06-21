@@ -288,6 +288,7 @@ async def converse_with_openai(history: list[dict[str, str]]) -> dict[str, Any] 
         )
         data = json.loads(response.choices[0].message.content or "{}")
         if not data.get("response"):
+            logger.warning("OpenAI returned JSON without 'response' field: %s", data)
             return None
         return data
     except Exception:
