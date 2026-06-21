@@ -297,41 +297,60 @@
     /* Launcher */
     var launcher = createElement("button", "tika-law-launcher");
     launcher.type = "button";
+    launcher.setAttribute("aria-label", "פתח צ'אט");
+    launcher.setAttribute("aria-expanded", "false");
     launcher.innerHTML = SVG_BOT;
 
     /* Panel */
     var panel = createElement("section", "tika-law-panel");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-label", "צ'אט Tiqa");
 
     /* Header */
     var header = createElement("header", "tika-law-header");
     var headerIcon = createElement("div", "tika-law-header-icon");
+    headerIcon.setAttribute("aria-hidden", "true");
     headerIcon.innerHTML = SVG_BOT;
     var headerInfo = createElement("div", "tika-law-header-info");
     var title = createElement("h2", "tika-law-title", "Tiqa");
     var subtitle = createElement("p", "tika-law-subtitle");
     var onlineDot = createElement("span", "tika-law-online");
+    onlineDot.setAttribute("aria-hidden", "true");
     subtitle.appendChild(onlineDot);
     subtitle.appendChild(document.createTextNode("תיאום ובירור ראשוני"));
     headerInfo.appendChild(title);
     headerInfo.appendChild(subtitle);
     var closeButton = createElement("button", "tika-law-close", "×");
     closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "סגור צ'אט");
     header.appendChild(headerIcon);
     header.appendChild(headerInfo);
     header.appendChild(closeButton);
 
     /* Body */
     var messages = createElement("div", "tika-law-messages");
+    messages.setAttribute("aria-live", "polite");
+    messages.setAttribute("aria-label", "שיחה");
     var disclaimer = createElement("div", "tika-law-disclaimer", "שיחה ראשונית בלבד, לא ייעוץ משפטי.");
 
     /* Composer */
     var composer = createElement("form", "tika-law-composer");
+    composer.setAttribute("aria-label", "שלח הודעה");
+    var inputId = "tika-law-input-" + Math.random().toString(36).slice(2);
+    var inputLabel = createElement("label", "");
+    inputLabel.setAttribute("for", inputId);
+    inputLabel.textContent = "הודעה";
+    inputLabel.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap";
     var input = createElement("input", "tika-law-input");
+    input.id = inputId;
     input.type = "text";
     input.placeholder = "כתוב/כתבי כאן...";
     var send = createElement("button", "tika-law-send");
     send.type = "submit";
+    send.setAttribute("aria-label", "שלח");
     send.innerHTML = SVG_PLANE;
+    composer.appendChild(inputLabel);
     composer.appendChild(input);
     composer.appendChild(send);
 
@@ -351,12 +370,14 @@
 
     launcher.addEventListener("click", function () {
       panel.classList.add("is-open");
+      launcher.setAttribute("aria-expanded", "true");
       input.focus();
     });
     var storageKey = "tika-closed-" + config.attorneyId;
 
     closeButton.addEventListener("click", function () {
       panel.classList.remove("is-open");
+      launcher.setAttribute("aria-expanded", "false");
       try { localStorage.setItem(storageKey, "1"); } catch (e) {}
     });
 
