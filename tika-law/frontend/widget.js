@@ -362,6 +362,19 @@
     root.appendChild(launcher);
     mount.appendChild(root);
 
+    // Keep our root as the last child of body so it stays above third-party widgets
+    // (e.g. Usercentrics) that inject themselves after us at the same z-index
+    if (mount === document.body) {
+      var observer = new MutationObserver(function () {
+        if (mount.lastChild !== root) {
+          observer.disconnect();
+          mount.appendChild(root);
+          observer.observe(mount, { childList: true });
+        }
+      });
+      observer.observe(mount, { childList: true });
+    }
+
     appendMessage(
       messages,
       "bot",
