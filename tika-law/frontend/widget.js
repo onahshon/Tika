@@ -38,7 +38,7 @@
       "}" +
 
       /* Launcher */
-      ".tika-law-launcher{position:fixed;right:24px;bottom:24px;z-index:2147483000;" +
+      ".tika-law-launcher{position:fixed;right:24px;bottom:24px;z-index:2147483647;" +
         "width:56px;height:56px;border:0;border-radius:50%;" +
         "background:var(--tika-primary-dark);color:#fff;" +
         "box-shadow:0 4px 18px rgba(30,64,175,.40);" +
@@ -46,7 +46,7 @@
       ".tika-law-launcher:hover{background:var(--tika-primary)}" +
 
       /* Panel */
-      ".tika-law-panel{position:fixed;right:24px;bottom:92px;z-index:2147483000;" +
+      ".tika-law-panel{position:fixed;right:24px;bottom:92px;z-index:2147483647;" +
         "width:min(400px,calc(100vw - 32px));height:min(640px,calc(100vh - 112px));" +
         "display:none;flex-direction:column;overflow:hidden;" +
         "border-radius:20px;background:var(--tika-panel-bg);" +
