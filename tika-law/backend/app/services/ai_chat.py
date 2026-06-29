@@ -8,7 +8,7 @@ from backend.app.schemas.chat import (
     ChatMessageResponse,
     ContactSubmitResponse,
 )
-from backend.app.services.notifications import notify_attorney
+from backend.app.services.notifications import notify_attorney, notify_attorney_closed
 from backend.app.services.openai_intake import converse_with_openai
 
 logger = logging.getLogger(__name__)
@@ -71,6 +71,12 @@ async def handle_chat_message(request: ChatMessageRequest) -> ChatMessageRespons
     if result.get("ready_for_attorney") and not state["finalized"] and not state["form_shown"]:
         state["form_shown"] = True
         show_form = True
+
+    # Notify on closed conversation (bot redirected without referral)
+    if result.get("conversation_closed") and not state.get("close_notified") and not state["form_shown"]:
+        state["close_notified"] = True
+        transcript = _build_transcript(state["history"])
+        await asyncio.to_thread(notify_attorney_closed, state["attorney_id"], transcript)
 
     return ChatMessageResponse(
         conversation_id=conversation_id,

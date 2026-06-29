@@ -63,6 +63,50 @@ def notify_attorney(
         return False
 
 
+def notify_attorney_closed(attorney_id: str, transcript: str) -> bool:
+    if not settings.resend_api_key:
+        return False
+
+    config = get_attorney_config(attorney_id)
+    if not config or not config.get("notify_on_close"):
+        return False
+
+    to_email = config.get("notify_on_close_email") or config.get("email")
+    if not to_email:
+        return False
+
+    resend.api_key = settings.resend_api_key
+
+    html_body = f"""<!doctype html>
+<html lang="he" dir="rtl">
+  <head><meta charset="utf-8"></head>
+  <body dir="rtl" style="margin:0;background:#ffffff;color:#111827;font-family:Arial,sans-serif;text-align:right;direction:rtl;">
+    <main dir="rtl" style="max-width:680px;margin:0 auto;padding:24px;direction:rtl;text-align:right;">
+      <h1 style="font-size:20px;margin:0 0 8px;color:#111827;">שיחה שלא הופנתה לעו"ד</h1>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 20px;">Tiqa סגרה את השיחה הבאה ללא הפניה. בדקו שמדובר בהחלטה נכונה.</p>
+      <h2 style="font-size:16px;margin:0 0 10px;color:#111827;">תמלול השיחה</h2>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;">
+        {"".join(_html_line(line) for line in transcript.splitlines())}
+      </div>
+    </main>
+  </body>
+</html>"""
+
+    try:
+        resend.Emails.send({
+            "from": settings.resend_from,
+            "to": [to_email],
+            "subject": "שיחה שלא הופנתה – לבדיקתך",
+            "html": html_body,
+            "text": transcript,
+        })
+        logger.info("notify_attorney_closed: sent to %s", to_email)
+        return True
+    except Exception:
+        logger.error("notify_attorney_closed error:\n%s", traceback.format_exc())
+        return False
+
+
 def _build_text_body(contact_lines: list[str], transcript: str) -> str:
     sections = ["\n".join(_rtl_line(line) for line in contact_lines)]
     if transcript:

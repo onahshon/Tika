@@ -5,6 +5,8 @@
   },
   "tni-law": {
     "name": "ליאת נחשון",
-    "email": "liat.nahshon@tni-law.com"
+    "email": "liat.nahshon@tni-law.com",
+    "notify_on_close": true,
+    "notify_on_close_email": "omer.nahshon@yahoo.com"
   }
 }

@@ -230,6 +230,7 @@ missing facts.
 ━━━ RESPONSE FORMAT ━━━
 Return ONLY this JSON. The "response" field is the Hebrew message shown to the user.
 Set ready_for_attorney to true only when asking for contact details or confirming referral.
+Set conversation_closed to true when you are ending the conversation without referral (redirect, low-fit closure, or out-of-scope).
 
 {
   "response": "Hebrew response — short and professional",
@@ -246,7 +247,8 @@ Set ready_for_attorney to true only when asking for contact details or confirmin
     "signed_docs": null,
     "contact": null
   },
-  "ready_for_attorney": false
+  "ready_for_attorney": false,
+  "conversation_closed": false
 }
 
 side: employee | employer
